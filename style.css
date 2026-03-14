@@ -1,0 +1,44 @@
+html, body{
+margin:0;
+padding:0;
+overflow:hidden;
+background:#050505;
+font-family:Arial;
+
+user-select:none;
+-webkit-user-select:none;
+-webkit-touch-callout:none;
+}
+
+canvas{
+position:fixed;
+top:0;
+left:0;
+
+width:100vw;
+height:100vh;
+
+background:black;
+border:2px solid #00ffff;
+box-shadow:0 0 20px #00ffff;
+
+touch-action:none;
+
+-webkit-user-select:none;
+-webkit-touch-callout:none;
+-webkit-tap-highlight-color: transparent;
+}
+
+h1{
+color:#00ffff;
+text-shadow:0 0 15px #00ffff;
+}
+
+.hud{
+font-size:20px;
+margin-top:10px;
+}
+
+.ranking{
+margin-top:20px;
+}
