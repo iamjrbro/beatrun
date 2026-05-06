@@ -494,7 +494,7 @@ function drawPlayer() {
   ctx.fill();
 
   /* ── HEADPHONE ── */
-  /* // arco
+ // arco
   ctx.strokeStyle = '#1a1a2e';
   ctx.lineWidth = 4;
   ctx.beginPath();
@@ -515,7 +515,7 @@ function drawPlayer() {
 
   ctx.restore();
 }
-*/
+
 /* ================================================================
    DRAW – TRAIL
    ================================================================ */
