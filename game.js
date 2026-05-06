@@ -495,7 +495,7 @@ function drawPlayer() {
 
   /* ── HEADPHONE ── */
   // arco
-/*  ctx.strokeStyle = '#1a1a2e';
+  ctx.strokeStyle = '#1a1a2e';
   ctx.lineWidth = 4;
   ctx.beginPath();
   ctx.arc(0, headY + 4, 16, Math.PI, 0);
@@ -514,7 +514,7 @@ function drawPlayer() {
   ctx.beginPath(); ctx.arc( 15, headY + 3, 1.5, 0, Math.PI * 2); ctx.fill();
 
   ctx.restore();
-}*/
+}
 
 /* ================================================================
    DRAW – TRAIL
@@ -702,7 +702,7 @@ function drawStart() {
   ctx.shadowBlur = 0;
   ctx.font = `${Math.min(w * 0.035, 18)}px 'Courier New'`;
   ctx.fillStyle = 'rgba(200,255,240,0.8)';
-  ctx.fillText('Para quem faz o beat acontecer 🎧', w / 2, h / 2 - 48);
+  ctx.fillText('Um presente pra quem faz o beat acontecer 🎧', w / 2, h / 2 - 48);
 
   ctx.fillStyle = 'rgba(0,255,200,0.6)';
   ctx.font = `${Math.min(w * 0.03, 15)}px 'Courier New'`;
