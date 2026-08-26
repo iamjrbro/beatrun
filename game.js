@@ -733,34 +733,10 @@ function drawPlayer() {
   ctx.ellipse(-1, HCY - HH - 1, HW - 13, HH - 14, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // 5. fade lateral esq (mais raspado)
-  const fL = ctx.createRadialGradient(-HW + 3, HCY - 4, 0, -HW + 3, HCY - 4, 12);
-  fL.addColorStop(0, 'rgba(60,40,5,0.55)');
-  fL.addColorStop(1, 'rgba(60,40,5,0)');
-  ctx.fillStyle = fL;
-  ctx.fillRect(-HW - 2, HCY - HH - 4, 18, HH + 4);
-
-  // 6. fade lateral dir
-  const fR = ctx.createRadialGradient(HW - 3, HCY - 4, 0, HW - 3, HCY - 4, 12);
-  fR.addColorStop(0, 'rgba(60,40,5,0.55)');
-  fR.addColorStop(1, 'rgba(60,40,5,0)');
-  ctx.fillStyle = fR;
-  ctx.fillRect(HW - 16, HCY - HH - 4, 18, HH + 4);
-
-  // 7. textura de fios curtíssimos (direção vertical, bem suaves)
-  ctx.strokeStyle = 'rgba(100,65,5,0.22)'; ctx.lineWidth = 0.8; ctx.lineCap = 'round';
-  const hairTop = HCY - HH - 2;
-  [[-12,hairTop+10,-12,hairTop+2],[-7,hairTop+8,-7,hairTop+1],[-2,hairTop+7,-2,hairTop],
-   [3,hairTop+7,3,hairTop],[8,hairTop+8,8,hairTop+1],[13,hairTop+10,13,hairTop+2]].forEach(([x1,y1,x2,y2])=>{
-    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-  });
-
-  ctx.restore();
-
-  // hairline – linha fina na testa, fora do clip para ficar visível
-  // posicionada bem baixa, onde o cabelo encontra a testa
-  const HL = HCY - HH + 8;
-  ctx.strokeStyle = '#7a5808'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+  /* ── HEADPHONE ── */
+ // arco
+  ctx.strokeStyle = '#1a1a2e';
+  ctx.lineWidth = 4;
   ctx.beginPath();
   ctx.moveTo(-HW + 1, HL + 4);
   ctx.bezierCurveTo(-HW + 4, HL + 1, -HW + 9, HL, -HW + 11, HL);
@@ -770,7 +746,7 @@ function drawPlayer() {
 
   ctx.restore();
 }
-
+*/
 /* ================================================================
    DRAW – TRAIL
    ================================================================ */
