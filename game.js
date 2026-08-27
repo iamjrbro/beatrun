@@ -340,7 +340,7 @@ function drawBackground() {
 
 /* ================================================================
    DRAW – PERSONAGEM DJ
-   Inspirado na arte: cabelo loiro, headphone, jaqueta escura, tênis azul
+   Inspirado na arte: cabelo loiro, jaqueta escura, tênis azul
    ================================================================ */
 function drawPlayer() {
   const px  = player.x;
@@ -492,28 +492,6 @@ function drawPlayer() {
   ctx.moveTo(-12, headY + 7);
   ctx.bezierCurveTo(-10, headY - 2, 0, headY - 3, 12, headY + 7);
   ctx.fill();
-
-  /* ── HEADPHONE ── */
-  // arco
-  ctx.strokeStyle = '#1a1a2e';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.arc(0, headY + 4, 16, Math.PI, 0);
-  ctx.stroke();
-  // ouvidores
-  ctx.fillStyle = '#111122';
-  ctx.beginPath(); ctx.arc(-16, headY + 4, 6, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc( 16, headY + 4, 6, 0, Math.PI * 2); ctx.fill();
-  // detalhes azuis
-  ctx.fillStyle = '#2288ff';
-  ctx.beginPath(); ctx.arc(-16, headY + 4, 3.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc( 16, headY + 4, 3.5, 0, Math.PI * 2); ctx.fill();
-  // brilho ouvidor
-  ctx.fillStyle = 'rgba(100,180,255,0.5)';
-  ctx.beginPath(); ctx.arc(-15, headY + 3, 1.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc( 15, headY + 3, 1.5, 0, Math.PI * 2); ctx.fill();
-
-  ctx.restore();
 }
 
 /* ================================================================
