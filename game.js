@@ -21,6 +21,9 @@ function resize() {
 resize();
 window.addEventListener('resize', resize);
 
+// Mantém o player posicionado corretamente após resize e na inicialização.
+player.y = getGround();
+
 /* ── ÁUDIO SINTÉTICO ── */
 let audioCtx = null;
 function ac() {
@@ -737,29 +740,6 @@ function _drawButton(cx, cy, bw, bh, label) {
   ctx.fillText(label, cx, cy + 6);
 }
 
-/* ================================================================
-   LOOP PRINCIPAL
-   ================================================================ */
-function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  /* posição X do player */
-  player.x = Math.min(160, canvas.width * 0.18);
-
-  drawBackground();
-  drawTrail();
-  drawPlayer();
-  drawBeats();
-  drawParticles();
-  drawComboTexts();
-
-  if (STATE === 'start')        drawStart();
-  else if (STATE === 'playing') update();
-  else                          drawDead();
-
-  requestAnimationFrame(gameLoop);
-}
-
 /* ── polyfill roundRect para Safari antigo ── */
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
@@ -772,6 +752,28 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
     this.arcTo(x,     y,     x + w, y,     r[0]);
     this.closePath();
   };
+}
+
+/* ── inicia ── */
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  /* posição X do player */
+  player.x = Math.min(160, canvas.width * 0.18);
+
+  if (STATE === 'playing') update();
+
+  drawBackground();
+  drawTrail();
+  drawPlayer();
+  drawBeats();
+  drawParticles();
+  drawComboTexts();
+
+  if (STATE === 'start') drawStart();
+  else if (STATE === 'dead') drawDead();
+
+  requestAnimationFrame(gameLoop);
 }
 
 /* inicia */
