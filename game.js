@@ -21,8 +21,6 @@ function resize() {
 resize();
 window.addEventListener('resize', resize);
 
-// Mantém o player posicionado corretamente após resize e na inicialização.
-player.y = getGround();
 
 /* ── ÁUDIO SINTÉTICO ── */
 let audioCtx = null;
@@ -77,6 +75,15 @@ const JUMP_FORCE = -15;
 
 function getGround() { return canvas.height - 90; }
 function getBeatY()  { return getGround(); }
+
+// O player usa o centro do sprite como referência de posição.
+function positionPlayer() {
+  player.y = getGround();
+  player.onGround = true;
+}
+
+positionPlayer();
+window.addEventListener('resize', positionPlayer);
 
 /* ── LISTAS ── */
 let beats      = [];
