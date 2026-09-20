@@ -21,7 +21,6 @@ function resize() {
 resize();
 window.addEventListener('resize', resize);
 
-
 /* ── ÁUDIO SINTÉTICO ── */
 let audioCtx = null;
 function ac() {
@@ -75,15 +74,6 @@ const JUMP_FORCE = -15;
 
 function getGround() { return canvas.height - 90; }
 function getBeatY()  { return getGround(); }
-
-// O player usa o centro do sprite como referência de posição.
-function positionPlayer() {
-  player.y = getGround();
-  player.onGround = true;
-}
-
-positionPlayer();
-window.addEventListener('resize', positionPlayer);
 
 /* ── LISTAS ── */
 let beats      = [];
@@ -350,7 +340,7 @@ function drawBackground() {
 
 /* ================================================================
    DRAW – PERSONAGEM DJ
-   Inspirado na arte: cabelo loiro, jaqueta escura, tênis azul
+   Inspirado na arte: cabelo loiro, headphone, jaqueta escura, tênis azul
    ================================================================ */
 function drawPlayer() {
   const px  = player.x;
@@ -502,6 +492,28 @@ function drawPlayer() {
   ctx.moveTo(-12, headY + 7);
   ctx.bezierCurveTo(-10, headY - 2, 0, headY - 3, 12, headY + 7);
   ctx.fill();
+
+  /* ── HEADPHONE ── */
+  // arco
+  ctx.strokeStyle = '#1a1a2e';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(0, headY + 4, 16, Math.PI, 0);
+  ctx.stroke();
+  // ouvidores
+  ctx.fillStyle = '#111122';
+  ctx.beginPath(); ctx.arc(-16, headY + 4, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc( 16, headY + 4, 6, 0, Math.PI * 2); ctx.fill();
+  // detalhes azuis
+  ctx.fillStyle = '#2288ff';
+  ctx.beginPath(); ctx.arc(-16, headY + 4, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc( 16, headY + 4, 3.5, 0, Math.PI * 2); ctx.fill();
+  // brilho ouvidor
+  ctx.fillStyle = 'rgba(100,180,255,0.5)';
+  ctx.beginPath(); ctx.arc(-15, headY + 3, 1.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc( 15, headY + 3, 1.5, 0, Math.PI * 2); ctx.fill();
+
+  ctx.restore();
 }
 
 /* ================================================================
@@ -690,7 +702,7 @@ function drawStart() {
   ctx.shadowBlur = 0;
   ctx.font = `${Math.min(w * 0.035, 18)}px 'Courier New'`;
   ctx.fillStyle = 'rgba(200,255,240,0.8)';
-  ctx.fillText('Para quem faz o beat acontecer 🎧', w / 2, h / 2 - 48);
+  ctx.fillText('Um presente pra quem faz o beat acontecer 🎧', w / 2, h / 2 - 48);
 
   ctx.fillStyle = 'rgba(0,255,200,0.6)';
   ctx.font = `${Math.min(w * 0.03, 15)}px 'Courier New'`;
@@ -747,6 +759,29 @@ function _drawButton(cx, cy, bw, bh, label) {
   ctx.fillText(label, cx, cy + 6);
 }
 
+/* ================================================================
+   LOOP PRINCIPAL
+   ================================================================ */
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  /* posição X do player */
+  player.x = Math.min(160, canvas.width * 0.18);
+
+  drawBackground();
+  drawTrail();
+  drawPlayer();
+  drawBeats();
+  drawParticles();
+  drawComboTexts();
+
+  if (STATE === 'start')        drawStart();
+  else if (STATE === 'playing') update();
+  else                          drawDead();
+
+  requestAnimationFrame(gameLoop);
+}
+
 /* ── polyfill roundRect para Safari antigo ── */
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
@@ -759,28 +794,6 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
     this.arcTo(x,     y,     x + w, y,     r[0]);
     this.closePath();
   };
-}
-
-/* ── inicia ── */
-function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  /* posição X do player */
-  player.x = Math.min(160, canvas.width * 0.18);
-
-  if (STATE === 'playing') update();
-
-  drawBackground();
-  drawTrail();
-  drawPlayer();
-  drawBeats();
-  drawParticles();
-  drawComboTexts();
-
-  if (STATE === 'start') drawStart();
-  else if (STATE === 'dead') drawDead();
-
-  requestAnimationFrame(gameLoop);
 }
 
 /* inicia */
