@@ -36,6 +36,23 @@ const ACHIEVEMENTS = [
   {id:'clean',name:'Para sempre o DJ',description:'Toque 90 segundos sem perder chances.'},
 ];
 const earned = new Set(readStored('beat-runner-achievements', []).filter?.(id => ACHIEVEMENTS.some(a => a.id === id)) || []);
+let playMode = 'challenge';
+let chillBest = Math.max(0,Number(readStored('beat-runner-chill-best',0))||0);
+let cheerBuffer = null;
+const HEART_MESSAGES = ['A produção mandou avisar que te ama.','Um salve do seu amor.','Seu maior fã tá torcendo por você.','Meu DJ favorito merece mais um set.'];
+let heartMessageIndex = Math.floor(Math.random()*HEART_MESSAGES.length);
+const MISSION_POOL = [
+  {id:'vinyls',label:'Colete 8 vinis',target:8},
+  {id:'usb',label:'Encontre 2 sets secretos',target:2},
+  {id:'clean',label:'Desvie de 5 obstáculos seguidos',target:5},
+  {id:'perfect',label:'Faça 2 pulos perfeitos',target:2},
+  {id:'drops',label:'Solte um drop',target:1}
+];
+function chooseMissions(){
+  const pool=MISSION_POOL.map(m=>({...m,done:false}));
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  return pool.slice(0,3);
+}
 let highScore = Math.max(0, Number(readStored('beat-runner-best', 0)) || 0);
 let STATE = 'start', score = 0, combo = 0, level = 1, frame = 0;
 let forceTutorial = false, audioCtx = null, muted = false;
@@ -47,7 +64,7 @@ let world = freshWorld();
 const player = {x:0,y:0,vy:0,w:54,h:110,jumpCount:0,maxJumps:2,onGround:true,squish:1,squishV:0,runFrame:0,poseFrames:0,pose:'idle'};
 const GRAVITY = 0.65, JUMP_FORCE = -13.5, FIXED_STEP = 1000 / 60;
 function freshWorld() {
-  return {shield:0,bonusSerial:0,nextBonus:1500,lives:3,vinyls:0,energy:0,dropFrames:0,invulnerable:0,distance:0,elapsed:0,stageIndex:0,
+  return {mode:playMode,missions:chooseMissions(),perfect:0,clean:0,usb:0,diamonds:0,hearts:0,backstage:0,crowdFrames:0,shield:0,bonusSerial:0,nextBonus:1500,lives:3,vinyls:0,energy:0,dropFrames:0,invulnerable:0,distance:0,elapsed:0,stageIndex:0,
     hits:0,drops:0,jumps:0,doubleJumps:0,dodged:0,beatClock:0,pulse:0,nextObstacle:420,nextRecord:100,
     tutorial:forceTutorial || !readStored('beat-runner-training-v2', false),announcement:'',announcementFrames:0};
 }
@@ -96,13 +113,13 @@ function renderAchievements() {
   setText('achievement-count', `${earned.size} / ${ACHIEVEMENTS.length}`);
 }
 function unlock(id) {
-  if (earned.has(id)) return;
+  if (world.mode==='chill' || earned.has(id)) return;
   const achievement = ACHIEVEMENTS.find(a => a.id === id); if (!achievement) return;
   earned.add(id); saveStored('beat-runner-achievements', [...earned]); renderAchievements();
   toastQueue.push('◆ ' + achievement.name);
 }
 function refreshMenu() {
-  setText('start-best', 'SEU MELHOR SET: ' + highScore + ' PTS');
+  setText('start-best', (playMode==='chill'?'MELHOR SET DE BOA: '+chillBest:'SEU MELHOR SET: '+highScore) + ' PTS');
   setText('training-label', readStored('beat-runner-training-v2', false) && !forceTutorial
     ? 'Estúdio → Primeira Pista → Festival. Até onde vai o seu set?'
     : 'Seu primeiro set tem treino guiado e três chances.');
@@ -115,20 +132,33 @@ function returnToMenu() {
   el('hud').hidden = true; el('pause').hidden = true; el('coach').hidden = true; el('toast').hidden = true;
   refreshMenu(); el('play').focus();
 }
+function selectMode(mode){
+  if(STATE!=='start'||!['challenge','chill'].includes(mode))return;
+  playMode=mode;
+  setText('mode-badge',mode==='chill'?'SEM PERDER VIDAS':'3 CHANCES POR SET');
+  el('mode-challenge').setAttribute('aria-pressed',String(mode==='challenge'));
+  el('mode-chill').setAttribute('aria-pressed',String(mode==='chill'));
+  setText('mode-description',mode==='chill'?'Sem perder vidas. Pause para encerrar seu set quando quiser.':'Três chances. Colete, desvie e tente bater seu recorde.');
+  refreshMenu();
+}
 function resetGame() {
   world = freshWorld(); forceTutorial = false; score = 0; combo = 0; level = 1; frame = 0;
   bonuses = []; obstacles = []; records = []; particles = []; comboTexts = []; toastQueue = []; toastFrames = 0;
   Object.assign(player, {x:Math.min(168,Math.max(62,canvas.width*0.18)),y:getGround(),vy:0,jumpCount:0,onGround:true,squish:1,squishV:0,runFrame:0,poseFrames:0,pose:'idle'});
-  STATE = 'playing'; lastTime = null; accumulator = 0;
+  STATE = 'playing'; lastTime = null; accumulator = 0;hudLives=null;
   el('menu-screen').hidden = true; el('result-screen').hidden = true; el('pause-screen').hidden = true;
   el('hud').hidden = false; el('pause').hidden = false; el('toast').hidden = true;
   updateHud(); updateCoach(); startMusic(); canvas.focus();
 }
 function finishGame() {
-  STATE = 'dead'; music.pause();
-  if (score > highScore) { highScore = score; saveStored('beat-runner-best', highScore); }
+  if(!['playing','paused'].includes(STATE))return;
+  STATE = 'dead'; music.pause();el('pause-screen').hidden=true;
+  if(world.mode==='chill' && score>chillBest){chillBest=score;saveStored('beat-runner-chill-best',chillBest);}
+  if (world.mode!=='chill' && score > highScore) { highScore = score; saveStored('beat-runner-best', highScore); }
   setText('result-score', score); setText('result-vinyls', world.vinyls); setText('result-drops', world.drops);
-  setText('result-best', 'MELHOR SET: ' + highScore + ' PTS');
+  setText('result-best', (world.mode==='chill'?'MELHOR SET DE BOA: '+chillBest:'MELHOR SET: '+highScore) + ' PTS');
+  setText('result-heading',world.mode==='chill'?'Seu som, no seu tempo.':'Até os brabos erram o cue. Solta outra!');
+  setText('result-details',`${world.vinyls} vinis · ${world.usb} sets secretos · ${world.diamonds} diamantes · ${world.perfect} pulos perfeitos. ${world.stageIndex} ${world.stageIndex===1?'pista conquistada':'pistas conquistadas'}. ${world.missions.filter(m=>m.done).length}/3 missões concluídas.`);
   setText('result-message', `${getStage().name} · ${Math.floor(world.elapsed)}s no comando. ${world.drops ? 'O drop foi seu.' : 'O próximo drop está logo ali.'}`);
   el('result-screen').hidden = false; el('coach').hidden = true; el('toast').hidden = true; el('pause').hidden = true;
   el('retry').focus();
@@ -154,7 +184,7 @@ function floatText(text, color = '#f5d892') { comboTexts.push({text,color,x:play
 function activateDrop() {
   if (STATE !== 'playing' || world.dropFrames > 0 || world.energy < 100) return;
   hudDirty = true;
-  world.energy = 0; world.dropFrames = 480; world.drops++;
+  world.energy = 0; world.dropFrames = 480; world.drops++;reactCrowd();
   player.pose = 'celebrate'; player.poseFrames = 24;
   floatText('SOLTA O TRAP!', '#fff0bc'); emitParticles(player.x,player.y,'#f4d68c',24);
   playTone(95,'sine',0.4,0.13); playTone(48,'sine',0.55,0.1); unlock('drop');
@@ -182,7 +212,12 @@ function hitObstacle(obstacle) {
     world.announcement='PULSEIRA USADA. O SET CONTINUA!';world.announcementFrames=120;
     return;
   }
-  world.lives--; world.hits++; combo = 0; world.energy = Math.max(0, world.energy - 12.5);
+  world.hits++;world.clean=0;combo=0;
+  if(world.mode==='chill'){
+    world.invulnerable=90;world.announcement='TÁ DE BOA. SEGUE O SOM!';world.announcementFrames=130;
+    emitParticles(player.x,player.y,'#91dbff',6);return;
+  }
+  world.lives--; combo = 0; world.energy = Math.max(0, world.energy - 12.5);
   world.invulnerable = 150; player.pose = 'hurt'; player.poseFrames = 40;
   emitParticles(player.x, player.y, '#f1a1b5', 14); playTone(130,'triangle',0.22,0.12);
   if (world.lives <= 0) finishGame();
@@ -209,7 +244,7 @@ function spawnRecord() {
 function spawnBonus(type) {
   const cycle=['usb','diamond','backstage','heart'];
   type ||= cycle[world.bonusSerial++ % cycle.length];
-  if(type==='heart' && world.lives>=3) type='diamond';
+  if(type==='heart' && world.lives>=3 && world.mode!=='chill') type='diamond';
   if(type==='backstage' && world.shield>0) type='usb';
   const lift=105;
   const item={type,x:canvas.width+45,y:getFloor()-lift,lift,r:18};
@@ -218,18 +253,54 @@ function spawnBonus(type) {
 function collectBonus(item) {
   hudDirty=true;
   let label='',color='#f7d88d';
-  if(item.type==='usb'){score+=100;label='SET SECRETO +100';}
-  else if(item.type==='diamond'){score+=150;label='BRILHOU! +150';color='#b6e9ff';}
-  else if(item.type==='backstage'){
+  if(item.type==='usb'){world.usb++;score+=100;label='SET SECRETO +100';}
+  else if(item.type==='diamond'){world.diamonds++;score+=150;label='BRILHOU! +150';color='#b6e9ff';}
+  else if(item.type==='backstage'){world.backstage++;
     if(world.shield){score+=50;label='BACKSTAGE +50';}
     else {world.shield=1;label='BACKSTAGE: 1 PROTEÇÃO';}color='#91dbff';
   } else if(item.type==='heart'){
-    color='#ffafc6';
-    if(world.lives<3){world.lives++;label='UM SALVE DO SEU AMOR: +1 CHANCE';}
+    color='#ffafc6';world.hearts++;
+    if(world.mode!=='chill'&&world.lives<3){world.lives++;label='UM SALVE DO SEU AMOR: +1 CHANCE';}
     else {score+=50;label='UM SALVE DO SEU AMOR: +50';}
   }
   floatText(label,color);emitParticles(item.x,item.y,color,10);playTone(660,'sine',.14,.06);
-  world.announcement=label;world.announcementFrames=160;
+  world.announcement=item.type==='heart'?HEART_MESSAGES[heartMessageIndex++%HEART_MESSAGES.length]+' '+(world.mode!=='chill'&&label.includes('+1')?'+1 CHANCE':'+50 PONTOS'):label;world.announcementFrames=item.type==='heart'?250:160;
+  reactCrowd();
+}
+function reactCrowd(){
+  world.crowdFrames=100;
+  if(muted||world.stageIndex===0)return;
+  try{
+    const audio=getAudio();
+    if(!cheerBuffer){cheerBuffer=audio.createBuffer(1,Math.floor(audio.sampleRate*.38),audio.sampleRate);const data=cheerBuffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(Math.sin(i/audio.sampleRate*70)**8);}
+    const source=audio.createBufferSource(),gain=audio.createGain();source.buffer=cheerBuffer;
+    gain.gain.setValueAtTime(.025,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.38);
+    source.connect(gain);gain.connect(audio.destination);source.start();
+  }catch{}
+}
+function updateMissions(){
+  for(const mission of world.missions){
+    if(mission.done||world[mission.id]<mission.target)continue;
+    mission.done=true;score+=75;hudDirty=true;
+    toastQueue.push('MISSÃO CONCLUÍDA · '+mission.label+' · +75');reactCrowd();
+  }
+}
+function renderMissions(){
+  for(let i=0;i<world.missions.length;i++){
+    const mission=world.missions[i];
+    setText('mission-'+i,(mission.done?'✓ ':'' )+mission.label+' · '+Math.min(mission.target,world[mission.id])+'/'+mission.target);
+  }
+}
+function trackClearance(obstacle,bounds,hitbox){
+  if(player.onGround||world.dropFrames>0||world.invulnerable>0)return;
+  const horizontal=bounds.x<hitbox.x+hitbox.w&&bounds.x+bounds.w>hitbox.x;
+  const gap=hitbox.y-(bounds.y+bounds.h);
+  if(horizontal&&gap>=0&&gap<=18)obstacle.nearMiss=true;
+}
+function passObstacle(obstacle){
+  if(obstacle.passed)return;
+  obstacle.passed=true;world.dodged++;world.clean++;score+=5;hudDirty=true;
+  if(obstacle.nearMiss){world.perfect++;score+=25;floatText('NO TEMPO! +25','#b8f5df');reactCrowd();}
 }
 function playerBounds() { return {x:player.x-16,y:player.y-54,w:32,h:100}; }
 function overlaps(a,b) { return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
@@ -256,19 +327,21 @@ function updateCoach() {
 }
 function updateHud() {
   setText('score',score); setText('vinyl-count',world.vinyls); setText('combo','x'+combo);
-  setText('lives',Array.from({length:3},(_,i)=>i<world.lives?'♥':'♡').join(' '));
-  if (hudLives !== world.lives) { el('lives').setAttribute('aria-label',world.lives+' chances'); hudLives=world.lives; }
+  setText('lives',world.mode==='chill'?'∞':Array.from({length:3},(_,i)=>i<world.lives?'♥':'♡').join(' '));
+  if (hudLives !== world.lives) { el('lives').setAttribute('aria-label',world.mode==='chill'?'Modo de boa, sem perder vidas':world.lives+' chances'); hudLives=world.lives; }
   setText('stage-label',`SET 0${world.stageIndex+1} · ${getStage().name}`);
   const next = STAGES[world.stageIndex+1];
   setText('stage-progress',next ? `${Math.floor(Math.min(100, (world.distance-getStage().at)/(next.at-getStage().at)*100))}% → ${next.name}` : 'LUKETA · O PALCO É SEU');
   const energyValue = world.dropFrames > 0 ? world.dropFrames/480*100 : world.energy;
   if (el('energy').value !== energyValue) el('energy').value = energyValue;
   setText('drop-label',world.dropFrames > 0 ? 'DROP ATIVO' : world.shield ? 'BACKSTAGE ATIVO' : 'PRÓXIMO DROP');
+  renderMissions();
   hudDirty = false;
 }
 function update() {
   if (STATE !== 'playing') return;
   frame++; world.elapsed += 1/60;
+  if(world.crowdFrames>0)world.crowdFrames--;
   const speed = getRunSpeed(), jumpStep = speed/6;
   world.distance += speed; player.runFrame += getStrideStep();
   world.pulse *= 0.9; world.beatClock += 1/60;
@@ -276,7 +349,7 @@ function update() {
   const next = STAGES[world.stageIndex+1];
   if (next && world.distance >= next.at) {
     hudDirty = true;
-    world.stageIndex++; level = world.stageIndex+1; unlock(next.id);
+    world.stageIndex++; level = world.stageIndex+1; unlock(next.id);reactCrowd();
     world.announcement = next.id === 'party' ? 'DA SALA PRA PISTA. A NOITE É SUA.' : 'LUKETA NO PALCO. PARA SEMPRE O DJ.';
     world.announcementFrames = 240; player.pose = 'celebrate'; player.poseFrames = 65;
   }
@@ -313,12 +386,14 @@ function update() {
   for (let i=obstacles.length-1;i>=0;i--) {
     const obstacle=obstacles[i]; obstacle.x -= speed;
     const hitbox={x:obstacle.x+4,y:obstacle.y+4,w:obstacle.w-8,h:obstacle.h-4};
+    trackClearance(obstacle,bounds,hitbox);
     if (overlaps(bounds,hitbox)) { hitObstacle(obstacle); obstacles.splice(i,1); if (STATE==='dead') break; }
     else if (!obstacle.passed && obstacle.x+obstacle.w < bounds.x) {
-      obstacle.passed=true; world.dodged++; score+=5; hudDirty=true;
+      passObstacle(obstacle);
     }
     if (obstacle.x < -90) obstacles.splice(i,1);
   }
+  if(STATE==='playing')updateMissions();
   if (STATE === 'playing' && world.tutorial && ((world.dodged>0 && world.vinyls>0 && world.jumps>0) || world.elapsed>30)) completeTutorial();
   for (const p of particles) {p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.life-=0.035;}
   particles=particles.filter(p=>p.life>0);
@@ -381,7 +456,7 @@ function gameLoop(now) {
   const alpha=STATE==='playing'?Math.max(0,Math.min(1,accumulator/FIXED_STEP)):0;
   const renderAhead=getRunSpeed()*alpha;
   renderStageFrame(ctx,{w:canvas.width,h:canvas.height,floor:getFloor(),stage:STATE==='start'?STAGES[0]:getStage(),
-    time:STATE==='start'?performance.now()/1000:world.elapsed+alpha/60,scroll:STATE==='start'?0:world.distance+renderAhead,pulse:world.pulse,drop:world.dropFrames>0&&STATE!=='start',reducedMotion});
+    time:STATE==='start'?performance.now()/1000:world.elapsed+alpha/60,scroll:STATE==='start'?0:world.distance+renderAhead,pulse:world.pulse,drop:world.dropFrames>0&&STATE!=='start',reducedMotion,crowd:STATE==='start'?0:world.crowdFrames/100});
   if(STATE==='start') { ctx.fillStyle='#080c1899';ctx.fillRect(0,0,canvas.width,canvas.height);drawMenuPortrait(); }
   else {
     for(const record of records) drawRecord(ctx,record,world.elapsed+alpha/60,reducedMotion,renderAhead);
@@ -394,6 +469,9 @@ function gameLoop(now) {
 el('play').addEventListener('click',resetGame);el('retry').addEventListener('click',resetGame);
 el('change-look').addEventListener('click',returnToMenu);
 el('replay-tutorial').addEventListener('click',()=>{forceTutorial=true;resetGame();});
+el('mode-challenge').addEventListener('click',()=>selectMode('challenge'));
+el('mode-chill').addEventListener('click',()=>selectMode('chill'));
+el('end-set').addEventListener('click',finishGame);
 el('pause').addEventListener('click',togglePause);el('resume').addEventListener('click',togglePause);
 el('sound').addEventListener('click',()=>{muted=!muted;music.muted=muted;setText('sound',muted?'SOM OFF':'SOM ON');el('sound').setAttribute('aria-pressed',String(muted));});
 canvas.addEventListener('pointerdown',doJump);

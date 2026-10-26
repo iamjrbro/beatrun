@@ -166,4 +166,37 @@ assert.ok(pacing.every(value=>value===pacing[0]));
   f.run('world.tutorial=false;update();');assert.equal(f.run('bonuses.length'),1);
 }
 
-console.log(`OK: ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; blocked storage.`);
+
+// Missions reward once, perfect jumps require an actual near-clearance, and chill scores stay separate.
+{
+  const f=fixture({cachedArt:true});f.events['play:click']();f.quiet();
+  f.run("world.missions=[{id:'usb',label:'Encontre 2 sets secretos',target:2,done:false}];collectBonus({type:'usb',x:0,y:0});updateMissions();");
+  assert.equal(f.run('score'),100);assert.equal(f.run('world.missions[0].done'),false);
+  f.run("collectBonus({type:'usb',x:0,y:0});updateMissions();updateMissions();");
+  assert.equal(f.run('score'),275,'mission reward applies exactly once');
+  f.run("const near={};player.onGround=false;trackClearance(near,{x:100,y:100,w:32,h:100},{x:100,y:210,w:40,h:36});passObstacle(near);passObstacle(near);");
+  assert.equal(f.run('world.perfect'),1);assert.equal(f.run('world.clean'),1);assert.equal(f.run('score'),305);
+  f.run("const far={};trackClearance(far,{x:100,y:50,w:32,h:100},{x:100,y:210,w:40,h:36});passObstacle(far);");
+  assert.equal(f.run('world.perfect'),1,'high safe jump is not a near miss');
+  f.run('world.invulnerable=0;hitObstacle({x:0,y:0});');assert.equal(f.run('world.clean'),0);
+  f.run("renderStageFrame(ctx,{w:390,h:844,floor:760,stage:STAGES[1],time:2,scroll:400,pulse:1,drop:false,reducedMotion:false,crowd:.5});");
+  f.run("drawCrowd(ctx,{w:390,floor:760,stage:STAGES[2],time:2,crowd:1,reducedMotion:true});");
+  f.run("world.lives=1;collectBonus({type:'heart',x:0,y:0});const firstLove=world.announcement;collectBonus({type:'heart',x:0,y:0});");
+  assert.notEqual(f.run('world.announcement'),f.run('firstLove'),'hearts rotate personal messages');
+  f.events['change-look:click']();f.events['mode-chill:click']();f.events['play:click']();f.quiet();
+  assert.equal(f.run('world.mode'),'chill');assert.equal(f.element('lives').textContent,'∞');
+  f.run('for(let i=0;i<8;i++){world.invulnerable=0;hitObstacle({x:0,y:0});}');
+  assert.equal(f.run('STATE'),'playing');assert.equal(f.run('world.lives'),3);
+  f.run('score=9999;');f.events['pause:click']();f.events['end-set:click']();
+  assert.equal(f.run('STATE'),'dead');assert.equal(f.element('pause-screen').hidden,true);
+  assert.equal(JSON.parse(f.storage.get('beat-runner-chill-best')),9999);
+  assert.equal(f.storage.has('beat-runner-best'),false,'chill cannot replace challenge record');
+  assert.ok(f.element('result-details').textContent.includes('sets secretos'));
+  assert.equal(f.element('result-heading').textContent,'Seu som, no seu tempo.');
+  f.events['retry:click']();assert.equal(f.run('world.mode'),'chill');assert.equal(f.run('world.usb'),0);
+  assert.equal(f.run('world.missions.length'),3);assert.equal(f.run('new Set(world.missions.map(m=>m.id)).size'),3);
+  f.events['change-look:click']();f.events['mode-challenge:click']();f.events['play:click']();
+  assert.equal(f.run('world.mode'),'challenge');assert.equal(f.run('world.lives'),3);
+}
+
+console.log(`OK: ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; blocked storage.`);

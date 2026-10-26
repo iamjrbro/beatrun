@@ -47,17 +47,7 @@ function drawStageBackdrop(ctx, {w, h, floor, stage, time, scroll, pulse, drop, 
       ctx.fillStyle = '#d8c5f8'; ctx.fillText('LUKETA', w * 0.535, horizon - 79);
       ctx.fillStyle = '#a9a4cd'; ctx.font = '9px monospace'; ctx.fillText('PARA SEMPRE O DJ', w * 0.535, horizon - 57);
     }
-    // Audience silhouettes stay behind the playable floor.
-    const crowdY = floor - 20;
-    for (let i = 0; i < Math.ceil(w / 26) + 2; i++) {
-      const x = i * 26 - (scroll * 0.18 % 26), bounce = reducedMotion ? 0 : Math.sin(time * 2.5 + i) * 2;
-      const y = crowdY - 30 - i * 7 % 20 + bounce;
-      artCircle(ctx, x, y, 6, '#182337'); artBox(ctx, x - 7, y + 5, 14, 29, '#182337', 6);
-      if (i % 4 === 0) {
-        ctx.strokeStyle = '#24324c'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y + 14);
-        ctx.lineTo(x + 14, y - 8 - bounce); ctx.stroke();
-      }
-    }
+
   }
   // Floor depth and evenly spaced passing markers convey real movement.
   ctx.fillStyle = '#0c1423'; ctx.fillRect(0, floor, w, h - floor);
@@ -127,7 +117,7 @@ function createArtSurface(w, h) {
   } catch {return null;}
 }
 function renderStageFrame(ctx, options) {
-  const {w,h,floor,stage,time,scroll,pulse,drop,reducedMotion}=options;
+  const {w,h,floor,stage,time,scroll,pulse,drop,reducedMotion,crowd=0}=options;
   const key=[w,h,floor,stage.id].join(':');
   if (!backdropSurface || backdropSurface.key!==key) {
     const cached=createArtSurface(w,h);
@@ -141,6 +131,7 @@ function renderStageFrame(ctx, options) {
   ctx.fillStyle=accent;ctx.globalAlpha=.32;
   for(let x=-(scroll%100);x<w;x+=100)ctx.fillRect(x,floor+16,32,2);
   ctx.globalAlpha=drop ? 0.85 : 0.6;ctx.fillRect(0,floor-1,w,2);
+  if(stage.id!=='studio')drawCrowd(ctx,{w,floor,stage,time,crowd,reducedMotion});
   if(stage.id!=='studio'&&!reducedMotion){
     ctx.globalAlpha=.035+pulse*.012;
     for(let i=0;i<2;i++){
@@ -191,5 +182,25 @@ function drawBonus(ctx,item,offsetX=0){
   const sprite=bonusSprites.get(item.type);
   if(sprite)ctx.drawImage(sprite,-26,-26);
   else {ctx.translate(-26,-26);paintBonus(ctx,item.type);}
+  ctx.restore();
+}
+
+function drawCrowd(ctx,{w,floor,stage,time,crowd,reducedMotion}){
+  ctx.save();
+  const count=Math.min(24,Math.ceil(w/32)),spacing=w/(count-1||1);
+  for(let i=0;i<count;i++){
+    const x=i*spacing;
+    const bounce=reducedMotion?0:Math.sin(time*(crowd>0?5:2.5)+i*1.3)*(crowd>0?4:1.5);
+    const y=floor-53-(i*7%19)+bounce;
+    const color=stage.id==='festival'?'#28314b':'#1c3043';
+    artCircle(ctx,x,y,5,color);artBox(ctx,x-6,y+5,12,23,color,5);
+    ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-4,y+12);
+    ctx.lineTo(x-13,y+(crowd>0?-9:6));ctx.moveTo(x+4,y+12);ctx.lineTo(x+12,y+(crowd>0?-12:1));ctx.stroke();
+  }
+  // Small, soft camera glints stay in the crowd; reduced motion suppresses them.
+  if(crowd>0&&!reducedMotion){
+    ctx.globalAlpha=Math.sin(Math.PI*crowd)*.45;
+    for(let i=0;i<3;i++){const x=w*(i+.65)/3,y=floor-83-(i%2)*17;ctx.strokeStyle='#d0e9e6';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-4,y);ctx.lineTo(x+4,y);ctx.moveTo(x,y-4);ctx.lineTo(x,y+4);ctx.stroke();}
+  }
   ctx.restore();
 }
