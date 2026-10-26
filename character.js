@@ -85,7 +85,7 @@ function drawShoes(ctx, shoes, x, y) {
   ctx.restore();
 }
 
-function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair }) {
+function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, pose = 'idle' }) {
   ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
@@ -143,7 +143,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 5.6px Arial';
   ctx.fillStyle = '#ffffff'; ctx.fillText('LUKETA', 0, 0); ctx.restore();
   // Left arm faces the viewer in a right-facing profile.
-  ctx.save(); ctx.translate(-7, -7); ctx.rotate(airborne ? -0.65 : -swing * 0.5);
+  ctx.save(); ctx.translate(-7, -7); ctx.rotate(pose === 'celebrate' ? -1.65 : airborne ? -0.65 : -swing * 0.5);
   box(-5, 6, 10, 24, 4, hoodie ? shirt : '#dfac8d');
   box(-7, -3, 14, 16, 4, shirt); line([[-6, 11], [6, 11]], seam);
   if (!hoodie) line([[-3, 16], [2, 19], [-2, 23]], '#6a6369', 1.2);
@@ -180,11 +180,15 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   line([[18, -33], [21, -32.5]], '#a77564', 0.9);
   line([[17, -28], [21, -27], [18, -25.5]], '#b77978', 1.5);
   line([[17, -23], [15, -19], [9, -19]], '#796753', 2.2);
+  if (pose === 'hurt') {
+    line([[8, -43], [12, -39], [16, -43]], '#675348', 1.4);
+    oval(19, -44, 1.4, 2.7, '#a6d5e6');
+  }
   ctx.restore();
 }
 
-function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = false, outfit = 'black', pants = 'sparkle', shoes = 'sneakers', hair = 'blond', view = 'front' }) {
-  if (view === 'profile') return drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair });
+function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = false, outfit = 'black', pants = 'sparkle', shoes = 'sneakers', hair = 'blond', view = 'front', pose = 'idle' }) {
+  if (view === 'profile') return drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, pose });
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
   const hoodie = outfit === 'neon' || outfit === 'orange';
   ctx.save();
@@ -236,7 +240,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   ctx.beginPath(); ctx.ellipse(15, 25, 7, 11, -0.25, 0, Math.PI); ctx.stroke();
   [-1, 1].forEach(side => {
     ctx.save(); ctx.translate(side * 22, -8);
-    ctx.rotate(airborne ? side * -0.65 : -swing * side * 0.38);
+    ctx.rotate(pose === 'celebrate' && side > 0 ? -2.1 : airborne ? side * -0.65 : -swing * side * 0.38);
     shape(-5, 7, 10, 22, 4, hoodie ? shirt : '#dfac8d');
     shape(-7, -2, 14, 15, 4, shirt);
     line([[-6, 11], [6, 11]], seam);
@@ -311,6 +315,15 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   oval(0, -26, 6.3, 2.5, '#bb7d7c');
   line([[-6, -26.5], [-2, -27], [0, -26.4], [2, -27], [6, -26.5]], '#955e60', 0.7);
   line([[-3, -24.7], [3, -24.7]], '#d99c96', 0.8);
+  if (pose === 'celebrate') {
+    ctx.strokeStyle = '#8f6064'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(0, -29, 6, 0.2, Math.PI - 0.2); ctx.stroke();
+  }
+  if (pose === 'hurt') {
+    line([[-13, -42], [-8, -38], [-4, -42]], '#675348', 1.4);
+    line([[4, -42], [8, -38], [13, -42]], '#675348', 1.4);
+    oval(20, -43, 1.5, 2.7, '#a6d5e6');
+  }
   oval(-21, -33, 1.4, 1.4, '#e4eaf4'); oval(21, -33, 2.2, 2.2, '#eee9e5');
   oval(-21.4, -33.5, 0.9, 0.9, '#ffffff');
   ctx.restore();

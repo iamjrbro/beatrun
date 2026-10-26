@@ -1,713 +1,413 @@
-/* ============================================================
-   BEAT RUNNER – game.js
-   Presente para o DJ – personagem inspirado na arte fornecida
-   ============================================================ */
-
+/* Beat Runner — LUKETA's set. Static files only; no account or server required. */
 const canvas = document.getElementById('game');
-const ctx    = canvas.getContext('2d');
-ctx.imageSmoothingEnabled = true;
-ctx.imageSmoothingQuality = 'high';
-
-const scoreEl = document.getElementById('score');
-const comboEl = document.getElementById('combo');
-const levelEl = document.getElementById('level');
-const music   = document.getElementById('music');
-
-/* Character choices are validated before restoring browser preferences. */
-const choiceOptions = { outfit: ['black', 'white', 'neon', 'orange'], hair: ['blond', 'pink'], pants: ['sparkle', 'plain', 'camo'], shoes: ['sneakers', 'boots', 'nike'], view: ['front', 'profile'] };
-const characterChoice = { outfit: 'black', hair: 'blond', pants: 'sparkle', shoes: 'sneakers', view: 'front' };
-try {
-  const saved = JSON.parse(localStorage.getItem('beat-runner-character') || '{}');
-  for (const key of Object.keys(choiceOptions)) {
-    // Always open with blond hair; pink is an explicit choice for this visit.
-    if (key !== 'hair' && choiceOptions[key].includes(saved?.[key])) characterChoice[key] = saved[key];
-  }
-} catch {}
+const ctx = canvas.getContext('2d');
+const uiNodes = new Map();
+const el = id => { if (!uiNodes.has(id)) uiNodes.set(id,document.getElementById(id)); return uiNodes.get(id); };
+const music = el('music');
+const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
+const choiceOptions = {outfit:['black','white','neon','orange'],hair:['blond','pink'],pants:['sparkle','plain','camo'],shoes:['sneakers','boots','nike'],view:['front','profile']};
+const characterChoice = {outfit:'black',hair:'blond',pants:'sparkle',shoes:'sneakers',view:'profile'};
+function readStored(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
+function saveStored(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
+const savedChoice = readStored('beat-runner-character', {});
+for (const key of Object.keys(choiceOptions)) {
+  if (key !== 'hair' && choiceOptions[key].includes(savedChoice?.[key])) characterChoice[key] = savedChoice[key];
+}
 function selectCharacter(key, value) {
   if (!choiceOptions[key]?.includes(value)) return;
   characterChoice[key] = value;
-  for (const option of choiceOptions[key]) {
-    document.getElementById(key + '-' + option).setAttribute('aria-pressed', String(option === value));
-  }
-  try { localStorage.setItem('beat-runner-character', JSON.stringify(characterChoice)); } catch {}
+  for (const option of choiceOptions[key]) el(key + '-' + option).setAttribute('aria-pressed', String(option === value));
+  saveStored('beat-runner-character', characterChoice);
 }
 for (const [key, values] of Object.entries(choiceOptions)) {
-  for (const value of values) document.getElementById(key + '-' + value).addEventListener('click', () => selectCharacter(key, value));
+  for (const value of values) el(key + '-' + value).addEventListener('click', () => selectCharacter(key, value));
   selectCharacter(key, characterChoice[key]);
 }
-const wardrobe = document.getElementById('wardrobe');
-const playButton = document.getElementById('play');
-const changeLookButton = document.getElementById('change-look');
-playButton.addEventListener('click', () => { resetGame(); canvas.focus(); });
-changeLookButton.addEventListener('click', () => {
-  document.getElementById('start-controls').hidden = false;
-  document.getElementById('start-best').textContent = 'SEU MELHOR SET: ' + highScore + ' PTS';
-  STATE = 'start'; wardrobe.hidden = false; playButton.hidden = false;
-  beats = []; particles = []; trail = []; comboTexts = [];
-  changeLookButton.hidden = true; document.getElementById('hud').hidden = true;
-  playButton.focus();
-});
-
-/* ── RESIZE ── */
-function resize() {
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
+const STAGES = [
+  {id:'studio',name:'ESTÚDIO',next:'PRIMEIRA PISTA',at:0,accent:'#81f7d4',sky:'#080f1b',grid:'#25413755',bpm:88,volume:0.24},
+  {id:'party',name:'PRIMEIRA PISTA',next:'FESTIVAL',at:4200,accent:'#79d2ef',sky:'#0c1228',grid:'#2b527155',bpm:108,volume:0.33},
+  {id:'festival',name:'FESTIVAL',next:'O PALCO É SEU',at:10500,accent:'#c7a7f4',sky:'#160f2a',grid:'#57457055',bpm:126,volume:0.42},
+];
+const ACHIEVEMENTS = [
+  {id:'record',name:'Esse som é seu',description:'Colete seu primeiro vinil.'},
+  {id:'drop',name:'Solta o Trap',description:'Solte seu primeiro drop.'},
+  {id:'party',name:'Da sala pra pista',description:'Chegue à Primeira Pista.'},
+  {id:'festival',name:'LUKETA no topo',description:'Chegue ao Festival.'},
+  {id:'clean',name:'Para sempre o DJ',description:'Toque 90 segundos sem perder chances.'},
+];
+const earned = new Set(readStored('beat-runner-achievements', []).filter?.(id => ACHIEVEMENTS.some(a => a.id === id)) || []);
+let highScore = Math.max(0, Number(readStored('beat-runner-best', 0)) || 0);
+let STATE = 'start', score = 0, combo = 0, level = 1, frame = 0;
+let forceTutorial = false, audioCtx = null, muted = false;
+let hudDirty = true, hudLives = null;
+let bonuses = [];
+let obstacles = [], records = [], particles = [], comboTexts = [];
+let toastQueue = [], toastFrames = 0, obstacleSerial = 0;
+let world = freshWorld();
+const player = {x:0,y:0,vy:0,w:54,h:110,jumpCount:0,maxJumps:2,onGround:true,squish:1,squishV:0,runFrame:0,poseFrames:0,pose:'idle'};
+const GRAVITY = 0.65, JUMP_FORCE = -13.5, FIXED_STEP = 1000 / 60;
+function freshWorld() {
+  return {shield:0,bonusSerial:0,nextBonus:1500,lives:3,vinyls:0,energy:0,dropFrames:0,invulnerable:0,distance:0,elapsed:0,stageIndex:0,
+    hits:0,drops:0,jumps:0,doubleJumps:0,dodged:0,beatClock:0,pulse:0,nextObstacle:420,nextRecord:100,
+    tutorial:forceTutorial || !readStored('beat-runner-training-v2', false),announcement:'',announcementFrames:0};
 }
+function getGround() { return canvas.height - 145; }
+function getFloor() { return getGround() + player.h / 2 + 6; }
+function getBeatY(height) { return getFloor() - height; }
+function getRunSpeed() { return Math.min(7.2, 4.2 + world.distance / 7000); }
+function getStrideStep() { return Math.min(1.34, 0.92 + (getRunSpeed()-4.2)*0.14); }
+function getStage() { return STAGES[world.stageIndex]; }
+function setText(id, text) { if (el(id).textContent !== String(text)) el(id).textContent = String(text); }
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 resize();
+player.x = Math.min(168, Math.max(62, canvas.width * 0.18)); player.y = getGround();
 window.addEventListener('resize', () => {
-  const oldGround = getGround(); resize();
-  player.y += getGround() - oldGround;
-  beats.forEach(b => { b.y = getBeatY(b.size); });
-  buildStars();
+  const previousGround = getGround(); resize(); player.y += getGround() - previousGround;
+  player.x = Math.min(168, Math.max(62, canvas.width * 0.18));
+  obstacles.forEach(o => { o.y = getBeatY(o.h); }); records.forEach(r => { r.y = getFloor() - r.lift; });
+  bonuses.forEach(b => { b.y = getFloor() - b.lift; });
 });
-
-/* ── ÁUDIO SINTÉTICO ── */
-let audioCtx = null;
-function ac() {
+function getAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
   return audioCtx;
 }
-function playTone(freq, type, duration, vol = 0.2) {
+function playTone(freq, type, duration, volume = 0.08) {
   if (muted) return;
   try {
-    const a = ac();
-    const o = a.createOscillator();
-    const g = a.createGain();
-    o.connect(g); g.connect(a.destination);
-    o.type = type;
-    o.frequency.setValueAtTime(freq, a.currentTime);
-    g.gain.setValueAtTime(vol, a.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + duration);
-    o.start(); o.stop(a.currentTime + duration);
-  } catch (e) {}
+    const audio = getAudio(), oscillator = audio.createOscillator(), gain = audio.createGain();
+    oscillator.type = type; oscillator.frequency.setValueAtTime(freq, audio.currentTime);
+    gain.gain.setValueAtTime(volume, audio.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + duration);
+    oscillator.connect(gain); gain.connect(audio.destination); oscillator.start(); oscillator.stop(audio.currentTime + duration);
+  } catch {}
 }
-function sfxJump()  { playTone(300,'sine',0.2); setTimeout(()=>playTone(550,'sine',0.12),60); }
-function sfxScore() { playTone(440,'sine',0.08,0.15); setTimeout(()=>playTone(660,'sine',0.08,0.12),50); }
-function sfxDead()  { playTone(120,'sawtooth',0.5,0.35); }
 function startMusic() {
-  if (audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
-  music.volume = 0.45;
-  music.play().catch(()=>{});
+  try { getAudio(); } catch {}
+  music.volume = getStage().volume; music.play().catch(() => {});
 }
-
-/* ── ESTADO ── */
-let STATE       = 'start'; // 'start' | 'playing' | 'dead'
-let score       = 0;
-let combo       = 0;
-let level       = 1;
-let frame       = 0;
-let highScore = 0;
-try { highScore = Number(localStorage.getItem('beat-runner-best')) || 0; } catch {}
-document.getElementById('start-best').textContent = 'SEU MELHOR SET: ' + highScore + ' PTS';
-let muted = false;
-const soundButton = document.getElementById('sound');
-soundButton.addEventListener('click', () => {
-  muted = !muted; music.muted = muted;
-  soundButton.textContent = muted ? 'SOM OFF' : 'SOM ON';
-  soundButton.setAttribute('aria-pressed', String(muted));
-});
-let spawnTimer  = 0;
-// A gentle first set, with one shared pace for the runner and incoming obstacles.
-function getRunSpeed() { return Math.min(8.5, 2.8 + (level - 1) * 0.45 + Math.min(frame / 3600, 1.5)); }
-
-/* ── PLAYER ── */
-const player = {
-  x: 0, y: 0,
-  vy: 0,
-  w: 54, h: 110,
-  jumpCount: 0,
-  maxJumps: 2,
-  onGround: false,
-  squish: 1,
-  squishV: 0,
-  runFrame: 0,
-};
-
-const GRAVITY    = 0.65;
-const JUMP_FORCE = -13.5;
-
-function getGround() { return canvas.height - 145; }
-function getBeatY(size) { return getGround() + player.h / 2 + 6 - size; }
-
-/* ── LISTAS ── */
-let beats      = [];
-let particles  = [];
-let stars      = [];
-let comboTexts = [];
-let trail      = [];
-let scanLines  = [];
-
-/* ── ESTRELAS ── */
-function buildStars() {
-  stars = [];
-  for (let i = 0; i < 100; i++) {
-    stars.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height * 0.75,
-      r: Math.random() * 1.6 + 0.3,
-      speed: Math.random() * 0.6 + 0.15,
-      phase: Math.random() * Math.PI * 2,
-    });
-  }
+function playBeat() {
+  const boost = world.dropFrames > 0 ? 1.3 : 1;
+  playTone(60, 'sine', 0.13, (0.035 + world.stageIndex * 0.012) * boost);
+  if (world.stageIndex >= 1) playTone(1800, 'triangle', 0.025, 0.009 * boost);
+  if (world.stageIndex >= 2 && frame % 2 === 0) playTone(160, 'triangle', 0.05, 0.025 * boost);
 }
-buildStars();
-
-/* ── RESET ── */
+function renderAchievements() {
+  el('achievements').innerHTML = ACHIEVEMENTS.map(a => `<div class="achievement ${earned.has(a.id) ? 'unlocked' : ''}" title="${a.description}"><span aria-hidden="true">${earned.has(a.id) ? '◆' : '◇'}</span>${a.name}<small style="display:block;font-size:8px;margin-top:5px">${earned.has(a.id) ? 'CONQUISTADO' : a.description}</small></div>`).join('');
+  setText('achievement-count', `${earned.size} / ${ACHIEVEMENTS.length}`);
+}
+function unlock(id) {
+  if (earned.has(id)) return;
+  const achievement = ACHIEVEMENTS.find(a => a.id === id); if (!achievement) return;
+  earned.add(id); saveStored('beat-runner-achievements', [...earned]); renderAchievements();
+  toastQueue.push('◆ ' + achievement.name);
+}
+function refreshMenu() {
+  setText('start-best', 'SEU MELHOR SET: ' + highScore + ' PTS');
+  setText('training-label', readStored('beat-runner-training-v2', false) && !forceTutorial
+    ? 'Estúdio → Primeira Pista → Festival. Até onde vai o seu set?'
+    : 'Seu primeiro set tem treino guiado e três chances.');
+  renderAchievements();
+}
+function returnToMenu() {
+  STATE = 'start'; music.pause();
+  bonuses = []; obstacles = []; records = []; particles = []; comboTexts = []; toastQueue = []; toastFrames = 0;
+  el('menu-screen').hidden = false; el('result-screen').hidden = true; el('pause-screen').hidden = true;
+  el('hud').hidden = true; el('pause').hidden = true; el('coach').hidden = true; el('toast').hidden = true;
+  refreshMenu(); el('play').focus();
+}
 function resetGame() {
-  document.getElementById('start-controls').hidden = true;
-  document.getElementById('hud').hidden = false;
-  wardrobe.hidden = true; playButton.hidden = true; changeLookButton.hidden = true;
-  score = 0; combo = 0; level = 1; frame = 0; spawnTimer = 0;
-  beats = []; particles = []; comboTexts = []; trail = [];
-  player.y = getGround();
-  player.vy = 0;
-  player.onGround = true;
-  player.jumpCount = 0;
-  player.squish = 1;
-  player.squishV = 0;
-  player.runFrame = 0;
-  scoreEl.textContent = '0';
-  comboEl.textContent = 'x0';
-  levelEl.textContent = '1';
-  STATE = 'playing';
-  startMusic();
+  world = freshWorld(); forceTutorial = false; score = 0; combo = 0; level = 1; frame = 0;
+  bonuses = []; obstacles = []; records = []; particles = []; comboTexts = []; toastQueue = []; toastFrames = 0;
+  Object.assign(player, {x:Math.min(168,Math.max(62,canvas.width*0.18)),y:getGround(),vy:0,jumpCount:0,onGround:true,squish:1,squishV:0,runFrame:0,poseFrames:0,pose:'idle'});
+  STATE = 'playing'; lastTime = null; accumulator = 0;
+  el('menu-screen').hidden = true; el('result-screen').hidden = true; el('pause-screen').hidden = true;
+  el('hud').hidden = false; el('pause').hidden = false; el('toast').hidden = true;
+  updateHud(); updateCoach(); startMusic(); canvas.focus();
 }
-
-/* ── PULO ── */
-function doJump() {
-  if (STATE === 'start') { resetGame(); return; }
-  if (STATE === 'dead')  { resetGame(); return; }
-  if (player.jumpCount < player.maxJumps) {
-    player.onGround = false;
-    player.vy = JUMP_FORCE;
-    player.jumpCount++;
-    player.squish = 1.45;
-    sfxJump();
-    for (let i = 0; i < 10; i++) {
-      particles.push({
-        x: player.x, y: player.y + player.h / 2,
-        vx: (Math.random() - 0.5) * 5,
-        vy:  Math.random() * 3 + 1,
-        life: 1, r: Math.random() * 4 + 2,
-        color: '#00ffc8',
-      });
-    }
-  }
+function finishGame() {
+  STATE = 'dead'; music.pause();
+  if (score > highScore) { highScore = score; saveStored('beat-runner-best', highScore); }
+  setText('result-score', score); setText('result-vinyls', world.vinyls); setText('result-drops', world.drops);
+  setText('result-best', 'MELHOR SET: ' + highScore + ' PTS');
+  setText('result-message', `${getStage().name} · ${Math.floor(world.elapsed)}s no comando. ${world.drops ? 'O drop foi seu.' : 'O próximo drop está logo ali.'}`);
+  el('result-screen').hidden = false; el('coach').hidden = true; el('toast').hidden = true; el('pause').hidden = true;
+  el('retry').focus();
 }
-
-/* ── INPUTS ── */
-document.addEventListener('keydown', e => {
-  if ((e.code === 'Space' || e.code === 'ArrowUp') && e.target.tagName !== 'BUTTON') { e.preventDefault(); if (!e.repeat) doJump(); }
-});
-canvas.addEventListener('pointerdown', () => doJump());
-
-/* ── SPAWN ── */
-const BEAT_TYPES = ['note','note','diamond','circle','vinyl'];
-
-function spawnBeat() {
-  const type = BEAT_TYPES[Math.floor(Math.random() * BEAT_TYPES.length)];
-  const size = 34 + Math.random() * 14;
-  beats.push({
-    x: canvas.width + 40,
-    y: getBeatY(size),
-    size,
-    type,
-    rot: 0,
-    speed: getRunSpeed(),
-    color: type === 'diamond' ? '#ffaa00'
-         : type === 'vinyl'   ? '#cc88ff'
-         : '#ff44cc',
-  });
-}
-
-/* ── PARTÍCULA DE HIT ── */
-function hitParticles(x, y, color) {
-  for (let i = 0; i < 20; i++) {
-    const a = Math.random() * Math.PI * 2;
-    const s = Math.random() * 7 + 2;
-    particles.push({
-      x, y,
-      vx: Math.cos(a) * s,
-      vy: Math.sin(a) * s,
-      life: 1,
-      r: Math.random() * 5 + 2,
-      color,
-    });
-  }
-}
-
-/* ── COMBO TEXT ── */
-function addComboText(x, y, text, color) {
-  comboTexts.push({ x, y, text, color, life: 1, vy: -2.2 });
-}
-
-/* ── UPDATE ── */
-function update() {
-  frame++;
-  player.runFrame += getRunSpeed() / 6;
-
-  /* nível */
-  level = 1 + Math.floor(score / 250);
-  levelEl.textContent = level;
-  const spawnInterval = Math.max(48, 130 - level * 7);
-
-  /* spawn */
-  spawnTimer++;
-  if (spawnTimer >= spawnInterval) { spawnTimer = 0; spawnBeat(); }
-
-  /* física */
-  // Keep the jump arc aligned with the distance obstacles travel.
-  const jumpStep = getRunSpeed() / 6;
-  player.vy += GRAVITY * jumpStep;
-  player.y  += player.vy * jumpStep;
-  const ground = getGround();
-  if (player.y >= ground) {
-    if (!player.onGround) player.squish = 0.9;
-    player.y = ground;
-    player.vy = 0;
-    player.onGround = true;
-    player.jumpCount = 0;
-  } else {
-    player.onGround = false;
-  }
-
-  /* squish spring */
-  player.squishV += (1 - player.squish) * 0.28;
-  player.squishV *= 0.62;
-  player.squish  += player.squishV;
-
-  /* trail */
-  trail.push({ x: player.x, y: player.y, life: 1 });
-  if (trail.length > 14) trail.shift();
-  trail.forEach(t => t.life -= 0.07);
-
-  /* beats */
-  for (let i = beats.length - 1; i >= 0; i--) {
-    const b = beats[i];
-    b.x  -= getRunSpeed();
-    b.rot += 0.06;
-
-    /* colisão (hitbox reduzida) */
-    const margin = 10;
-    const px = player.x - player.w / 2 + margin;
-    const py = player.y - player.h / 2 + margin;
-    const pw = player.w - margin * 2;
-    const ph = player.h - margin * 2;
-    if (px < b.x + b.size && px + pw > b.x && py < b.y + b.size && py + ph > b.y) {
-      STATE = 'dead';
-      changeLookButton.hidden = false;
-      if (score > highScore) {
-        highScore = score;
-        try { localStorage.setItem('beat-runner-best', String(highScore)); } catch {}
-      }
-      music.pause();
-      sfxDead();
-      hitParticles(player.x, player.y, '#ff4466');
-      beats = [];
-      return;
-    }
-
-    /* passou */
-    if (b.x < -80) {
-      const bonus = 10 * (1 + Math.floor(combo / 5));
-      score += bonus;
-      combo++;
-      scoreEl.textContent = score;
-      comboEl.textContent = 'x' + combo;
-      sfxScore();
-      const label = combo > 1 ? '+' + bonus + '  x' + combo + ' COMBO!' : '+10';
-      const col   = combo > 14 ? '#ffdd00' : combo > 7 ? '#00ffc8' : '#ffffff';
-      addComboText(canvas.width / 2, getGround() - 60, label, col);
-      beats.splice(i, 1);
-    }
-  }
-
-  /* particles */
-  particles.forEach(p => {
-    p.x += p.vx; p.y += p.vy; p.vy += 0.18;
-    p.life -= 0.032;
-  });
-  particles = particles.filter(p => p.life > 0);
-
-  /* comboTexts */
-  comboTexts.forEach(c => { c.y += c.vy; c.life -= 0.022; });
-  comboTexts = comboTexts.filter(c => c.life > 0);
-}
-
-/* ================================================================
-   DRAW – FUNDO
-   ================================================================ */
-function drawBackground() {
-  const w = canvas.width, h = canvas.height;
-
-  /* céu */
-  const sky = ctx.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, '#03030f');
-  sky.addColorStop(1, '#08081a');
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, w, h);
-
-  /* grade perspectiva (chão) */
-  const vanishY = h * 0.55;
-  const gridOff = (player.runFrame * 2) % 60;
-  ctx.strokeStyle = 'rgba(0,255,200,0.06)';
-  ctx.lineWidth = 1;
-
-  /* linhas verticais perspectiva */
-  for (let i = -20; i <= 20; i++) {
-    const bx = w / 2 + i * 80;
-    ctx.beginPath();
-    ctx.moveTo(w / 2, vanishY);
-    ctx.lineTo(bx, h);
-    ctx.stroke();
-  }
-  /* linhas horizontais */
-  for (let d = 0; d < 1; d += 0.06) {
-    const y = vanishY + (h - vanishY) * Math.pow((d + (gridOff / 600)) % 1, 1.3);
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(w, y);
-    ctx.stroke();
-  }
-
-  /* estrelas */
-  const starSpeed = getRunSpeed() / 7;
-  stars.forEach(s => {
-    s.x -= s.speed * starSpeed;
-    if (s.x < 0) { s.x = w + 5; s.y = Math.random() * h * 0.55; }
-    const pulse = 0.5 + 0.5 * Math.sin(frame * 0.05 + s.phase);
-    ctx.fillStyle = `rgba(180,220,255,${0.25 + pulse * 0.5})`;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  /* chão glow */
-  const gY = getGround() + player.h / 2 + 6;
-  ctx.save();
-  ctx.shadowColor = '#00ffc8';
-  ctx.shadowBlur  = 18;
-  ctx.strokeStyle = '#00ffc8';
-  ctx.lineWidth   = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(0, gY);
-  ctx.lineTo(w, gY);
-  ctx.stroke();
-  ctx.restore();
-
-  /* reflexo chão */
-  const ref = ctx.createLinearGradient(0, gY, 0, gY + 40);
-  ref.addColorStop(0, 'rgba(0,255,200,0.12)');
-  ref.addColorStop(1, 'rgba(0,255,200,0)');
-  ctx.fillStyle = ref;
-  ctx.fillRect(0, gY, w, 40);
-}
-
-/* ================================================================
-   DRAW – PERSONAGEM DJ
-   Arte original inspirada nas fotos, com roupas, calçados e vista selecionáveis
-   ================================================================ */
-function drawPlayer() {
-  if (STATE === 'start') return;
-  ctx.save();
-  ctx.translate(player.x, player.y + player.h / 2 + 6);
-  ctx.scale(1 / player.squish, player.squish);
-  ctx.fillStyle = 'rgba(0,255,200,0.15)';
-  ctx.beginPath(); ctx.ellipse(0, 0, 29, 5, 0, 0, Math.PI * 2); ctx.fill();
-  drawDJ(ctx, { ...characterChoice, x: 0, y: -54, phase: player.runFrame,
-    running: STATE === 'playing' && player.onGround, airborne: !player.onGround });
-  ctx.restore();
-}
-
-function drawTrail() {
-  trail.forEach((t, i) => {
-    const a = t.life * 0.25 * (i / trail.length);
-    ctx.fillStyle = `rgba(0,255,200,${a})`;
-    ctx.beginPath();
-    ctx.arc(t.x, t.y, (i / trail.length) * player.w * 0.35, 0, Math.PI * 2);
-    ctx.fill();
-  });
-}
-
-/* ================================================================
-   DRAW – BEATS (obstáculos musicais)
-   ================================================================ */
-function drawNote(ctx, size) {
-  /* nota musical clássica */
-  ctx.fillStyle = '#ff44cc';
-  ctx.shadowColor = '#ff44cc';
-  ctx.shadowBlur = 14;
-  // haste
-  ctx.fillRect(-size * 0.08, -size * 0.55, size * 0.15, size * 0.65);
-  // cabeça oval
-  ctx.save();
-  ctx.translate(-size * 0.18, size * 0.1);
-  ctx.rotate(-0.4);
-  ctx.beginPath();
-  ctx.ellipse(0, 0, size * 0.22, size * 0.17, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-  // bandeira
-  ctx.strokeStyle = '#ff44cc';
-  ctx.lineWidth = size * 0.1;
-  ctx.beginPath();
-  ctx.moveTo(size * 0.07, -size * 0.55);
-  ctx.bezierCurveTo(size * 0.35, -size * 0.3, size * 0.35, -size * 0.05, size * 0.1, size * 0.0);
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-}
-
-function drawDiamond(ctx, size, color) {
-  ctx.fillStyle = color;
-  ctx.shadowColor = color;
-  ctx.shadowBlur = 14;
-  ctx.beginPath();
-  ctx.moveTo(0, -size * 0.55);
-  ctx.lineTo(size * 0.45, 0);
-  ctx.lineTo(0, size * 0.55);
-  ctx.lineTo(-size * 0.45, 0);
-  ctx.closePath();
-  ctx.fill();
-  // brilho
-  ctx.fillStyle = 'rgba(255,255,255,0.25)';
-  ctx.beginPath();
-  ctx.moveTo(0, -size * 0.5);
-  ctx.lineTo(size * 0.2, -size * 0.1);
-  ctx.lineTo(0, 0);
-  ctx.lineTo(-size * 0.2, -size * 0.1);
-  ctx.closePath();
-  ctx.fill();
-  ctx.shadowBlur = 0;
-}
-
-function drawVinyl(ctx, size) {
-  /* disco de vinil */
-  ctx.fillStyle = '#1a0a2e';
-  ctx.shadowColor = '#cc88ff';
-  ctx.shadowBlur = 14;
-  ctx.beginPath();
-  ctx.arc(0, 0, size * 0.48, 0, Math.PI * 2);
-  ctx.fill();
-  // sulcos
-  for (let r = 0.15; r < 0.45; r += 0.08) {
-    ctx.strokeStyle = `rgba(180,100,255,${0.4 - r * 0.5})`;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(0, 0, size * r, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-  // label central
-  ctx.fillStyle = '#cc88ff';
-  ctx.beginPath();
-  ctx.arc(0, 0, size * 0.13, 0, Math.PI * 2);
-  ctx.fill();
-  // buraco
-  ctx.fillStyle = '#1a0a2e';
-  ctx.beginPath();
-  ctx.arc(0, 0, size * 0.05, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-}
-
-function drawCircleObstacle(ctx, size) {
-  /* anel pulsante */
-  const p = 0.5 + 0.5 * Math.sin(frame * 0.15);
-  ctx.strokeStyle = '#ff44cc';
-  ctx.shadowColor = '#ff44cc';
-  ctx.lineWidth = 3 + p * 2;
-  ctx.shadowBlur = 10 + p * 10;
-  ctx.beginPath();
-  ctx.arc(0, 0, size * 0.46, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.fillStyle = `rgba(255,68,204,${0.08 + p * 0.08})`;
-  ctx.fill();
-  // símbolo de onda (EQ)
-  ctx.strokeStyle = '#ff88ee';
-  ctx.lineWidth = 2;
-  ctx.shadowBlur = 0;
-  ctx.beginPath();
-  for (let x = -size * 0.3; x <= size * 0.3; x += 2) {
-    const y = Math.sin((x / (size * 0.15)) * Math.PI + frame * 0.2) * size * 0.12;
-    x === -size * 0.3 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.stroke();
-}
-
-function drawBeats() {
-  beats.forEach(b => {
-    ctx.save();
-    ctx.translate(b.x + b.size / 2, b.y + b.size / 2);
-    ctx.rotate(b.rot);
-    const s = b.size;
-    switch (b.type) {
-      case 'note':    drawNote(ctx, s);                   break;
-      case 'diamond': drawDiamond(ctx, s, b.color);       break;
-      case 'vinyl':   drawVinyl(ctx, s);                  break;
-      case 'circle':  drawCircleObstacle(ctx, s);         break;
-    }
-    ctx.restore();
-    ctx.shadowBlur = 0;
-  });
-}
-
-/* ================================================================
-   DRAW – PARTICLES
-   ================================================================ */
-function drawParticles() {
-  particles.forEach(p => {
-    ctx.globalAlpha = p.life;
-    ctx.fillStyle   = p.color;
-    ctx.shadowColor = p.color;
-    ctx.shadowBlur  = 8;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  ctx.globalAlpha = 1;
-  ctx.shadowBlur  = 0;
-}
-
-/* ================================================================
-   DRAW – COMBO TEXTS
-   ================================================================ */
-function drawComboTexts() {
-  comboTexts.forEach(c => {
-    ctx.globalAlpha = c.life;
-    ctx.fillStyle   = c.color;
-    ctx.shadowColor = c.color;
-    ctx.shadowBlur  = 8;
-    ctx.font        = `bold ${16 + Math.min(combo, 15)}px 'Courier New'`;
-    ctx.textAlign   = 'center';
-    ctx.fillText(c.text, c.x, c.y);
-  });
-  ctx.globalAlpha = 1;
-  ctx.shadowBlur  = 0;
-  ctx.textAlign   = 'left';
-}
-
-/* ================================================================
-   TELAS – START / GAME OVER
-   ================================================================ */
-function drawStart() {
-  const w = canvas.width, h = canvas.height;
-  const compact = h <= 500 && w >= 600;
-  const short = h <= 700;
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#a4beb9';
-  ctx.font = "11px 'Courier New'";
-  ctx.fillText('PARA QUEM FAZ O BEAT ACONTECER', w / 2, h * 0.19 - 55);
-  ctx.font = "bold " + Math.min(w * 0.1, h * 0.1, 62) + "px 'Courier New'";
-  ctx.fillStyle = '#c8fff0'; ctx.shadowColor = '#00ffc8'; ctx.shadowBlur = 22;
-  ctx.fillText('BEAT RUNNER', w / 2, h * 0.19 + 10);
-  ctx.shadowBlur = 0;
-  // Reserve the entire subtitle line before fitting the portrait above the menu.
-  const portraitTop = h * 0.19 + 38 + 20;
-  const portraitBottom = compact ? h - 72 : h * (short ? 0.54 : 0.58) - 12;
-  const avatarY = (portraitTop + portraitBottom) / 2 + 7;
-  const avatarX = w * (compact ? 0.24 : 0.5);
-  const scale = Math.max(0.1, Math.min(1.7, (portraitBottom - portraitTop) / 146));
-  ctx.fillStyle = 'rgba(0,255,200,0.06)';
-  ctx.strokeStyle = 'rgba(0,255,200,0.22)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.arc(avatarX, avatarY - 7, scale * 73, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-  drawDJ(ctx, { ...characterChoice, x: avatarX, y: avatarY, scale, phase: performance.now() / 17 });
-  ctx.textAlign = 'center';
-  ctx.font = "12px 'Courier New'"; ctx.fillStyle = '#b5c8c5';
-  ctx.fillText('Para sempre o DJ', w / 2, h * 0.19 + 38);
-
-  ctx.textAlign = 'left';
-}
-
-function drawDead() {
-  const w = canvas.width, h = canvas.height;
-
-  ctx.fillStyle = 'rgba(0,0,0,0.65)';
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.min(w * 0.09, 54)}px 'Courier New'`;
-  ctx.shadowColor = '#ff4466';
-  ctx.shadowBlur  = 28;
-  ctx.fillStyle   = '#ff4466';
-  ctx.fillText('GAME OVER', w / 2, h / 2 - 90);
-
-  ctx.shadowBlur = 0;
-  ctx.fillStyle  = '#ffffff';
-  ctx.font       = `${Math.min(w * 0.04, 20)}px 'Courier New'`;
-  ctx.fillText('Score: ' + score, w / 2, h / 2 - 44);
-
-  ctx.fillStyle = 'rgba(255,220,80,0.9)';
-  ctx.font      = `${Math.min(w * 0.033, 16)}px 'Courier New'`;
-  ctx.fillText('Melhor: ' + highScore, w / 2, h / 2 - 14);
-
-  _drawButton(w / 2, h / 2 + 30, 240, 52, 'JOGAR DE NOVO');
-
-  ctx.textAlign = 'left';
-}
-
-function _drawButton(cx, cy, bw, bh, label) {
-  const x = cx - bw / 2;
-  const y = cy - bh / 2;
-  ctx.shadowColor = '#00ffc8';
-  ctx.shadowBlur  = 20;
-  ctx.strokeStyle = '#00ffc8';
-  ctx.lineWidth   = 2;
-  ctx.fillStyle   = 'rgba(0,255,200,0.12)';
-  ctx.beginPath();
-  ctx.roundRect(x, y, bw, bh, 10);
-  ctx.fill();
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-  ctx.fillStyle  = '#00ffc8';
-  ctx.font       = `bold 17px 'Courier New'`;
-  ctx.fillText(label, cx, cy + 6);
-}
-
-/* ================================================================
-   LOOP PRINCIPAL
-   ================================================================ */
-let lastTime = null;
-let accumulator = 0;
-function gameLoop(now) {
-  const elapsed = lastTime === null ? 0 : Math.min(now - lastTime, 100);
-  lastTime = now;
+function togglePause() {
   if (STATE === 'playing') {
-    accumulator += elapsed;
-    while (accumulator >= 1000 / 60 && STATE === 'playing') {
-      update(); accumulator -= 1000 / 60;
+    STATE = 'paused'; music.pause(); el('pause-screen').hidden = false; el('coach').hidden = true; el('resume').focus();
+  } else if (STATE === 'paused') {
+    STATE = 'playing'; lastTime = null; accumulator = 0; el('pause-screen').hidden = true; startMusic(); canvas.focus(); updateCoach();
+  }
+}
+function doJump() {
+  if (STATE !== 'playing' || player.jumpCount >= player.maxJumps) return;
+  player.vy = JUMP_FORCE; player.jumpCount++; player.onGround = false; player.squish = 1.14;
+  world.jumps++; if (player.jumpCount === 2) world.doubleJumps++;
+  playTone(player.jumpCount === 2 ? 520 : 330, 'sine', 0.12, 0.055);
+  emitParticles(player.x, player.y + 55, '#81f7d4', 6); updateCoach();
+}
+function emitParticles(x, y, color, count = 12) {
+  for (let i = 0; i < (reducedMotion ? Math.ceil(count / 3) : count); i++) particles.push({x,y,vx:(Math.random()-.5)*5,vy:-Math.random()*3-1,life:1,color,r:1+Math.random()*2});
+}
+function floatText(text, color = '#f5d892') { comboTexts.push({text,color,x:player.x+65,y:player.y-55,life:1}); }
+function activateDrop() {
+  if (STATE !== 'playing' || world.dropFrames > 0 || world.energy < 100) return;
+  hudDirty = true;
+  world.energy = 0; world.dropFrames = 480; world.drops++;
+  player.pose = 'celebrate'; player.poseFrames = 24;
+  floatText('SOLTA O TRAP!', '#fff0bc'); emitParticles(player.x,player.y,'#f4d68c',24);
+  playTone(95,'sine',0.4,0.13); playTone(48,'sine',0.55,0.1); unlock('drop');
+}
+function collectRecord(record) {
+  hudDirty = true;
+  world.vinyls++; combo++; const bonus = 15 + Math.min(45, Math.floor(combo / 4) * 5);
+  score += world.dropFrames > 0 ? bonus * 2 : bonus;
+  // Protected collecting earns extra points, never a self-sustaining shield.
+  if (world.dropFrames === 0) world.energy = Math.min(100, world.energy + 12.5);
+  player.pose = 'celebrate'; player.poseFrames = 22;
+  emitParticles(record.x, record.y, '#f4d68c', 8); floatText('+' + (world.dropFrames > 0 ? bonus * 2 : bonus) + (combo >= 4 ? ' · x' + combo : ''));
+  playTone(440 + (combo % 5) * 65,'sine',0.08,0.055); unlock('record');
+  if (world.energy >= 100 && world.dropFrames === 0) activateDrop();
+}
+function hitObstacle(obstacle) {
+  hudDirty = true;
+  if (world.dropFrames > 0) {
+    score += 5; emitParticles(obstacle.x, obstacle.y, '#f1d491', 12); floatText('NO DROP!', '#f3df9e'); return;
+  }
+  if (world.invulnerable > 0) return;
+  if (world.shield > 0) {
+    world.shield=0;world.invulnerable=60;
+    emitParticles(player.x,player.y,'#91dbff',12);floatText('BACKSTAGE SALVOU!', '#91dbff');
+    world.announcement='PULSEIRA USADA. O SET CONTINUA!';world.announcementFrames=120;
+    return;
+  }
+  world.lives--; world.hits++; combo = 0; world.energy = Math.max(0, world.energy - 12.5);
+  world.invulnerable = 150; player.pose = 'hurt'; player.poseFrames = 40;
+  emitParticles(player.x, player.y, '#f1a1b5', 14); playTone(130,'triangle',0.22,0.12);
+  if (world.lives <= 0) finishGame();
+  else { world.announcement = `OPA! ${world.lives} ${world.lives === 1 ? 'CHANCE' : 'CHANCES'}. O SET CONTINUA.`; world.announcementFrames = 140; }
+}
+function spawnObstacle(type) {
+  const options = ['speaker','case','cable'];
+  type ||= options[Math.floor(Math.random() * (world.tutorial ? 2 : 3))];
+  const dimensions = {speaker:[42,48],case:[48,36],cable:[54,20]};
+  const [w,h] = dimensions[type];
+  const obstacle = {id:++obstacleSerial,x:canvas.width+64,y:getBeatY(h),w,h,type,passed:false};
+  obstacles.push(obstacle);
+  // A visible rising vinyl trail hints at where to jump without disguising hazards.
+  for (const [offset,lift] of [[-135,55],[-70,150],[0,205],[70,150]]) {
+    records.push({x:obstacle.x+offset,y:getFloor()-lift,lift,r:13});
+  }
+  return obstacle;
+}
+function spawnRecord() {
+  const lift = Math.floor(world.nextRecord / 410) % 3 === 0 ? 55 : 150;
+  records.push({x:canvas.width+35,y:getFloor()-lift,lift,r:13});
+}
+// Rare pickups are separate from vinyls: they never charge the drop.
+function spawnBonus(type) {
+  const cycle=['usb','diamond','backstage','heart'];
+  type ||= cycle[world.bonusSerial++ % cycle.length];
+  if(type==='heart' && world.lives>=3) type='diamond';
+  if(type==='backstage' && world.shield>0) type='usb';
+  const lift=105;
+  const item={type,x:canvas.width+45,y:getFloor()-lift,lift,r:18};
+  bonuses.push(item);return item;
+}
+function collectBonus(item) {
+  hudDirty=true;
+  let label='',color='#f7d88d';
+  if(item.type==='usb'){score+=100;label='SET SECRETO +100';}
+  else if(item.type==='diamond'){score+=150;label='BRILHOU! +150';color='#b6e9ff';}
+  else if(item.type==='backstage'){
+    if(world.shield){score+=50;label='BACKSTAGE +50';}
+    else {world.shield=1;label='BACKSTAGE: 1 PROTEÇÃO';}color='#91dbff';
+  } else if(item.type==='heart'){
+    color='#ffafc6';
+    if(world.lives<3){world.lives++;label='UM SALVE DO SEU AMOR: +1 CHANCE';}
+    else {score+=50;label='UM SALVE DO SEU AMOR: +50';}
+  }
+  floatText(label,color);emitParticles(item.x,item.y,color,10);playTone(660,'sine',.14,.06);
+  world.announcement=label;world.announcementFrames=160;
+}
+function playerBounds() { return {x:player.x-16,y:player.y-54,w:32,h:100}; }
+function overlaps(a,b) { return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
+function recordTouchesPlayer(record, bounds) {
+  const nx = Math.max(bounds.x, Math.min(record.x, bounds.x+bounds.w));
+  const ny = Math.max(bounds.y, Math.min(record.y, bounds.y+bounds.h));
+  return (record.x-nx)**2 + (record.y-ny)**2 <= record.r**2;
+}
+function completeTutorial() {
+  world.tutorial = false; saveStored('beat-runner-training-v2', true);
+  world.announcement = 'SEU SOM. SEU TEMPO. AGORA O SET É SEU.'; world.announcementFrames = 210;
+}
+function updateCoach() {
+  let hint = '';
+  if (world.dropFrames > 0) hint = `SOLTA O TRAP · ${Math.ceil(world.dropFrames/60)}s DE PROTEÇÃO`;
+  else if (world.announcementFrames > 0) hint = world.announcement;
+  else if (world.tutorial) {
+    if (world.vinyls === 0) hint = '01 / PEGUE OS VINIS DOURADOS. ELES SÃO PARA COLETAR.';
+    else if (world.jumps === 0) hint = '02 / ESPAÇO, ↑ OU TOQUE PARA PULAR.';
+    else if (world.doubleJumps === 0) hint = '03 / MAIS UM TOQUE NO AR = PULO DUPLO.';
+    else hint = 'BOA! AGORA PULE AS CAIXAS, CASES E CABOS.';
+  }
+  if (el('coach').hidden !== !hint) el('coach').hidden = !hint; if (hint) setText('coach', hint);
+}
+function updateHud() {
+  setText('score',score); setText('vinyl-count',world.vinyls); setText('combo','x'+combo);
+  setText('lives',Array.from({length:3},(_,i)=>i<world.lives?'♥':'♡').join(' '));
+  if (hudLives !== world.lives) { el('lives').setAttribute('aria-label',world.lives+' chances'); hudLives=world.lives; }
+  setText('stage-label',`SET 0${world.stageIndex+1} · ${getStage().name}`);
+  const next = STAGES[world.stageIndex+1];
+  setText('stage-progress',next ? `${Math.floor(Math.min(100, (world.distance-getStage().at)/(next.at-getStage().at)*100))}% → ${next.name}` : 'LUKETA · O PALCO É SEU');
+  const energyValue = world.dropFrames > 0 ? world.dropFrames/480*100 : world.energy;
+  if (el('energy').value !== energyValue) el('energy').value = energyValue;
+  setText('drop-label',world.dropFrames > 0 ? 'DROP ATIVO' : world.shield ? 'BACKSTAGE ATIVO' : 'PRÓXIMO DROP');
+  hudDirty = false;
+}
+function update() {
+  if (STATE !== 'playing') return;
+  frame++; world.elapsed += 1/60;
+  const speed = getRunSpeed(), jumpStep = speed/6;
+  world.distance += speed; player.runFrame += getStrideStep();
+  world.pulse *= 0.9; world.beatClock += 1/60;
+  if (world.beatClock >= 60/getStage().bpm) { world.beatClock -= 60/getStage().bpm; world.pulse = 1; playBeat(); }
+  const next = STAGES[world.stageIndex+1];
+  if (next && world.distance >= next.at) {
+    hudDirty = true;
+    world.stageIndex++; level = world.stageIndex+1; unlock(next.id);
+    world.announcement = next.id === 'party' ? 'DA SALA PRA PISTA. A NOITE É SUA.' : 'LUKETA NO PALCO. PARA SEMPRE O DJ.';
+    world.announcementFrames = 240; player.pose = 'celebrate'; player.poseFrames = 65;
+  }
+  if (world.elapsed >= 90 && world.hits === 0) unlock('clean');
+  if (world.dropFrames > 0) { world.dropFrames--; if (world.dropFrames === 0 && world.energy >= 100) activateDrop(); }
+  if (world.invulnerable > 0) world.invulnerable--;
+  if (world.announcementFrames > 0) world.announcementFrames--;
+  if (player.poseFrames > 0) player.poseFrames--;
+  player.vy += GRAVITY * jumpStep; player.y += player.vy * jumpStep;
+  if (player.y >= getGround()) {
+    if (!player.onGround) { player.squish = 0.88; if (player.poseFrames === 0) {player.pose='land';player.poseFrames=12;} }
+    player.y = getGround(); player.vy = 0; player.onGround = true; player.jumpCount = 0;
+  } else player.onGround = false;
+  player.squishV = (player.squishV+(1-player.squish)*0.28)*0.62; player.squish += player.squishV;
+  const trainingGate = world.tutorial && (world.elapsed < 8 || (world.jumps === 0 && world.elapsed < 18));
+  if (world.distance >= world.nextObstacle && !trainingGate) {
+    spawnObstacle(); world.nextObstacle = world.distance + Math.max(350, 640-world.distance/75);
+  }
+  if (world.distance >= world.nextRecord) { spawnRecord(); world.nextRecord = world.distance+410; }
+  if(world.distance>=world.nextBonus && !trainingGate) {
+    spawnBonus();world.nextBonus=world.distance+2100;
+  }
+  const bounds = playerBounds();
+  for(let i=bonuses.length-1;i>=0;i--){
+    const item=bonuses[i];item.x-=speed;
+    if(recordTouchesPlayer(item,bounds)){collectBonus(item);bonuses.splice(i,1);}
+    else if(item.x < -40)bonuses.splice(i,1);
+  }
+  for (let i=records.length-1;i>=0;i--) {
+    const record=records[i]; record.x -= speed;
+    if (recordTouchesPlayer(record,bounds)) { collectRecord(record); records.splice(i,1); }
+    else if (record.x < -30) { records.splice(i,1); combo = 0; }
+  }
+  for (let i=obstacles.length-1;i>=0;i--) {
+    const obstacle=obstacles[i]; obstacle.x -= speed;
+    const hitbox={x:obstacle.x+4,y:obstacle.y+4,w:obstacle.w-8,h:obstacle.h-4};
+    if (overlaps(bounds,hitbox)) { hitObstacle(obstacle); obstacles.splice(i,1); if (STATE==='dead') break; }
+    else if (!obstacle.passed && obstacle.x+obstacle.w < bounds.x) {
+      obstacle.passed=true; world.dodged++; score+=5; hudDirty=true;
     }
-  } else accumulator = 0;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  /* posição X do player */
-  player.x = Math.min(160, canvas.width * 0.18);
-
-  drawBackground();
-  drawTrail();
-  drawPlayer();
-  drawBeats();
-  drawParticles();
-  drawComboTexts();
-
-  if (STATE === 'start')        drawStart();
-  else if (STATE === 'playing') update();
-  else                          drawDead();
-
+    if (obstacle.x < -90) obstacles.splice(i,1);
+  }
+  if (STATE === 'playing' && world.tutorial && ((world.dodged>0 && world.vinyls>0 && world.jumps>0) || world.elapsed>30)) completeTutorial();
+  for (const p of particles) {p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.life-=0.035;}
+  particles=particles.filter(p=>p.life>0);
+  for (const text of comboTexts) {text.y-=0.65;text.life-=0.02;}
+  comboTexts=comboTexts.filter(t=>t.life>0);
+  if (toastFrames>0) toastFrames--;
+  else if (toastQueue.length) {setText('toast',toastQueue.shift());toastFrames=180;}
+  const hideToast=toastFrames===0 || STATE!=='playing';
+  if (el('toast').hidden !== hideToast) el('toast').hidden=hideToast;
+  if (hudDirty || frame % 6 === 0) {
+    const volumeTarget=world.dropFrames>0?0.48:getStage().volume;
+    if(Math.abs(volumeTarget-music.volume)>0.005) music.volume+=(volumeTarget-music.volume)*0.15;
+    updateHud();if(STATE==='playing')updateCoach();
+  }
+}
+function drawPlayer(alpha = 0) {
+  if (STATE==='start') return;
+  ctx.save();
+  const renderY = player.onGround ? player.y : Math.min(getGround(),player.y+player.vy*(getRunSpeed()/6)*alpha);
+  const foot = renderY+player.h/2+6;
+  artCircle(ctx,player.x,getFloor()+2,21,'#81f7d40c');
+  if (world.dropFrames>0 || world.shield>0) {
+    ctx.strokeStyle=world.dropFrames>0?'#e8ce86':'#91dbff'; ctx.lineWidth=1.8; ctx.globalAlpha=.65;
+    ctx.beginPath(); ctx.ellipse(player.x,renderY-4,46,74,0,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha=1;
+  }
+  if (world.invulnerable>0 && !reducedMotion) ctx.globalAlpha=.58+Math.sin(frame*.15)*.13;
+  const pose = player.poseFrames>0?player.pose:'idle';
+  const bob = player.onGround && pose==='celebrate' && !reducedMotion ? Math.sin(frame*.32)*2 : 0;
+  ctx.translate(player.x,foot+bob); ctx.scale(1/player.squish,player.squish);
+  drawDJ(ctx,{...characterChoice,view:characterChoice.view,x:0,y:-54,phase:player.runFrame+getStrideStep()*alpha,
+    running:STATE==='playing'&&player.onGround,airborne:!player.onGround,pose});
+  ctx.restore();
+}
+function drawMenuPortrait() {
+  const rect=el('portrait-anchor').getBoundingClientRect();
+  if (rect.bottom<0 || rect.top>canvas.height || rect.height<=0) return;
+  const scale=Math.min(2.05,(rect.height-28)/146,(rect.width-25)/146);
+  const x=rect.x+rect.width/2, y=rect.y+rect.height/2+7;
+  ctx.save();ctx.beginPath();ctx.rect(rect.x,rect.y,rect.width,rect.height);ctx.clip();
+  ctx.fillStyle='#153b3a66';ctx.strokeStyle='#477a6b88';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(x,y-7,scale*73,0,Math.PI*2);ctx.fill();ctx.stroke();
+  // Front portrait makes the face and jewelry readable; view buttons set the run angle.
+  drawDJ(ctx,{...characterChoice,view:'front',x,y,scale,phase:performance.now()/20,pose:'idle'});ctx.restore();
+}
+function drawEffects() {
+  ctx.save();
+  for (const p of particles) {ctx.globalAlpha=p.life;artCircle(ctx,p.x,p.y,p.r,p.color);}
+  ctx.textAlign='center';ctx.font='bold 12px monospace';
+  for (const text of comboTexts) {ctx.globalAlpha=text.life;ctx.fillStyle=text.color;ctx.fillText(text.text,Math.max(70,Math.min(canvas.width-70,text.x)),text.y);}
+  ctx.restore();
+}
+let lastTime=null,accumulator=0;
+function gameLoop(now) {
+  const elapsed=lastTime===null?0:Math.max(0,Math.min(now-lastTime,250));lastTime=now;
+  if (STATE==='playing') {
+    accumulator+=elapsed;
+    while(accumulator+0.00001>=FIXED_STEP && STATE==='playing') {update();accumulator-=FIXED_STEP;}
+  } else accumulator=0;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const alpha=STATE==='playing'?Math.max(0,Math.min(1,accumulator/FIXED_STEP)):0;
+  const renderAhead=getRunSpeed()*alpha;
+  renderStageFrame(ctx,{w:canvas.width,h:canvas.height,floor:getFloor(),stage:STATE==='start'?STAGES[0]:getStage(),
+    time:STATE==='start'?performance.now()/1000:world.elapsed+alpha/60,scroll:STATE==='start'?0:world.distance+renderAhead,pulse:world.pulse,drop:world.dropFrames>0&&STATE!=='start',reducedMotion});
+  if(STATE==='start') { ctx.fillStyle='#080c1899';ctx.fillRect(0,0,canvas.width,canvas.height);drawMenuPortrait(); }
+  else {
+    for(const record of records) drawRecord(ctx,record,world.elapsed+alpha/60,reducedMotion,renderAhead);
+    for(const item of bonuses) drawBonus(ctx,item,renderAhead);
+    for(const obstacle of obstacles) drawStageObstacle(ctx,obstacle,renderAhead);
+    drawPlayer(alpha);drawEffects();
+  }
   requestAnimationFrame(gameLoop);
 }
+el('play').addEventListener('click',resetGame);el('retry').addEventListener('click',resetGame);
+el('change-look').addEventListener('click',returnToMenu);
+el('replay-tutorial').addEventListener('click',()=>{forceTutorial=true;resetGame();});
+el('pause').addEventListener('click',togglePause);el('resume').addEventListener('click',togglePause);
+el('sound').addEventListener('click',()=>{muted=!muted;music.muted=muted;setText('sound',muted?'SOM OFF':'SOM ON');el('sound').setAttribute('aria-pressed',String(muted));});
+canvas.addEventListener('pointerdown',doJump);
+document.addEventListener('keydown',event=>{
+  if(event.code==='Escape'&&!event.repeat) {togglePause();return;}
+  if(event.target.tagName==='BUTTON') return;
+  if(['Space','ArrowUp'].includes(event.code)) {event.preventDefault();if(!event.repeat) doJump();}
 
-/* ── polyfill roundRect para Safari antigo ── */
+});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&STATE==='playing') togglePause();});
 if (!CanvasRenderingContext2D.prototype.roundRect) {
-  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-    if (typeof r === 'number') r = [r, r, r, r];
-    this.beginPath();
-    this.moveTo(x + r[0], y);
-    this.arcTo(x + w, y,     x + w, y + h, r[1]);
-    this.arcTo(x + w, y + h, x,     y + h, r[2]);
-    this.arcTo(x,     y + h, x,     y,     r[3]);
-    this.arcTo(x,     y,     x + w, y,     r[0]);
-    this.closePath();
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    if(typeof r==='number') r=[r,r,r,r];this.moveTo(x+r[0],y);this.arcTo(x+w,y,x+w,y+h,r[1]);
+    this.arcTo(x+w,y+h,x,y+h,r[2]);this.arcTo(x,y+h,x,y,r[3]);this.arcTo(x,y,x+w,y,r[0]);this.closePath();
   };
 }
-
-/* inicia */
-requestAnimationFrame(gameLoop);
+refreshMenu();requestAnimationFrame(gameLoop);

@@ -1,113 +1,169 @@
-import { readFileSync } from 'node:fs';
+import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
-const gradient = { addColorStop() {} };
-const context = new Proxy({}, { get: (_, key) => key === 'createLinearGradient' ? () => gradient : () => {}, set: () => true });
-const events = {};
-const elements = new Map();
-const storage = new Map([['beat-runner-character', JSON.stringify({hair: 'pink', outfit: 'white'})]]);
-function element(id) {
-  if (!elements.has(id)) elements.set(id, { textContent: '', getContext: () => context,
-    addEventListener: (type, fn) => { events[id + ':' + type] = fn; },
-    play: () => Promise.resolve(), pause() {}, focus() {}, attributes: {}, setAttribute(key, value) { this.attributes[key] = value; } });
-  return elements.get(id);
-}
-const scope = vm.createContext({ console, Math, performance: { now: () => 0 },
-  document: { getElementById: element, addEventListener: (type, fn) => { events[type] = fn; } },
-  window: { innerWidth: 390, innerHeight: 844, addEventListener: (type, fn) => { events[type] = fn; } },
-  localStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) },
-  CanvasRenderingContext2D: function () {}, requestAnimationFrame() {}, setTimeout() {} });
-for (const file of ['character.js', 'game.js']) vm.runInContext(readFileSync(new URL('../' + file, import.meta.url), 'utf8'), scope);
-const run = code => vm.runInContext(code, scope);
-assert.equal(run('characterChoice.hair'), 'blond', 'default hair stays blond');
-assert.equal(run('characterChoice.outfit'), 'white', 'other saved choices still restore');
-events['hair-pink:click']();
-events['outfit-orange:click']();
-events['pants-camo:click']();
-assert.equal(JSON.parse(storage.get('beat-runner-character')).hair, 'pink');
-assert.equal(JSON.parse(storage.get('beat-runner-character')).outfit, 'orange');
-assert.equal(JSON.parse(storage.get('beat-runner-character')).pants, 'camo');
-events['outfit-white:click'](); events['pants-plain:click'](); events['shoes-nike:click'](); events['view-profile:click']();
-assert.equal(run('characterChoice.outfit'), 'white');
-assert.equal(run('characterChoice.view'), 'profile');
-assert.equal(JSON.parse(storage.get('beat-runner-character')).shoes, 'nike');
-assert.equal(JSON.parse(storage.get('beat-runner-character')).pants, 'plain');
-assert.equal(element('outfit-white').attributes['aria-pressed'], 'true');
-assert.equal(element('outfit-black').attributes['aria-pressed'], 'false');
-run("selectCharacter('outfit', 'invalid');");
-assert.equal(run('characterChoice.outfit'), 'white');
-run(`for (const outfit of choiceOptions.outfit) for (const hair of choiceOptions.hair) for (const pants of choiceOptions.pants) for (const shoes of choiceOptions.shoes)
-  for (const view of choiceOptions.view) for (const airborne of [false, true]) {
-    drawDJ(ctx, {x: 0, y: 0, outfit, hair, pants, shoes, view, airborne, running: true, phase: 10});
-  }`);
-events['play:click']();
-assert.equal(element('wardrobe').hidden, true);
-run(`const originalDrawDJ = drawDJ; let renderedChoice;
-  drawDJ = (ctx, choice) => { renderedChoice = choice; }; drawPlayer(); drawDJ = originalDrawDJ;`);
-assert.equal(run('renderedChoice.view'), 'profile');
-assert.equal(run('renderedChoice.outfit'), 'white');
-assert.equal(run('renderedChoice.shoes'), 'nike');
-assert.equal(run('renderedChoice.pants'), 'plain');
-events['change-look:click']();
-assert.equal(run('STATE'), 'start');
-assert.equal(element('wardrobe').hidden, false);
-assert.equal(run('characterChoice.view'), 'profile');
-run('resetGame(); gameLoop(0);');
-assert.equal(run('STATE'), 'playing');
-run('doJump(); update();');
-assert.equal(run('player.jumpCount'), 1);
-assert.equal(run('player.onGround'), false);
-run('doJump(); doJump();');
-assert.equal(run('player.jumpCount'), 2, 'third jump must be ignored');
-run('spawnTimer = -10000; for (let i = 0; i < 180; i++) update();');
-assert.equal(run('player.onGround'), true);
-assert.equal(run('player.jumpCount'), 0);
-run('beats = []; spawnBeat();');
-assert.equal(run('beats[0].y + beats[0].size'), run('getGround() + player.h / 2 + 6'));
-run('score = 100; beats[0].x = player.x - 12; update();');
-assert.equal(run('STATE'), 'dead', 'ground obstacle must collide with player');
-assert.equal(storage.get('beat-runner-best'), '100');
-run('resetGame(); beats = [{ x: -90, y: 0, size: 40, speed: 0, rot: 0 }]; update(); update();');
-assert.equal(run('score'), 10, 'one obstacle awards points only once');
-assert.equal(run('combo'), 1);
-run('doJump(); update();');
-const distance = run('getGround() - player.y');
-run('window.innerHeight = 600;'); events.resize();
-assert.equal(run('getGround() - player.y'), distance);
-events['sound:click']();
-assert.equal(element('music').muted, true);
-assert.equal(element('sound').textContent, 'SOM OFF');
-run('resetGame(); gameLoop(1000); gameLoop(1017);');
-assert.ok(run('frame') >= 1);
-run('resetGame();');
-const initialSpeed = run('getRunSpeed()');
-assert.equal(initialSpeed, 2.8, 'start at a relaxed pace');
-run('update();');
-assert.ok(run('player.runFrame') < 1, 'walking animation starts slowly too');
-run('frame = 1800; level = 3;');
-assert.ok(run('getRunSpeed()') > initialSpeed, 'pace increases as the run advances');
-run('frame = 999999; level = 100;');
-assert.equal(run('getRunSpeed()'), 8.5, 'speed has a playable upper limit');
-// Reproduce landing on the same obstacle at the initial slow speed; also
-// check larger obstacles, varied timing, later levels and both screen widths.
-for (const width of [390, 1024]) for (const points of [0, 1000, 4000]) {
-  for (const size of [34, 48]) for (const distance of [60, 100, 150]) {
-    run(`window.innerWidth = ${width}; resize(); resetGame();
-      player.x = Math.min(160, canvas.width * 0.18); score = ${points}; spawnTimer = -10000;
-      beats = [{x: player.x + ${distance}, y: getBeatY(${size}), size: ${size}, rot: 0}];
-      doJump();
-      for (let i = 0; i < 200 && STATE === 'playing'; i++) {
-        update(); if (player.onGround) break;
-      }`);
-    const scenario = `width=${width}, score=${points}, size=${size}, gap=${distance}`;
-    assert.equal(run('STATE'), 'playing', `single jump must clear obstacle: ${scenario}`);
-    assert.equal(run('player.onGround'), true, `must land safely: ${scenario}`);
-    assert.ok(run('beats.length === 0 || beats[0].x + beats[0].size < player.x - player.w / 2'),
-      `obstacle must be behind the player on landing: ${scenario}`);
+const sources=['character.js','stage-art.js','game.js'].map(file=>readFileSync(new URL('../'+file,import.meta.url),'utf8'));
+function fixture({width=390,height=844,blockedStorage=false,cachedArt=false}={}) {
+  const events={},elements=new Map(),storage=new Map([['beat-runner-character',JSON.stringify({hair:'pink',outfit:'white'})]]);
+  const gradient={addColorStop(){}};
+  const context=new Proxy({}, {get:(target,key)=>key in target?target[key]:key==='createLinearGradient'?()=>gradient:()=>{},set:(target,key,value)=>{target[key]=value;return true;}});
+  function element(id) {
+    if(!elements.has(id)) elements.set(id,{tagName:id==='game'?'CANVAS':'BUTTON',textContent:'',innerHTML:'',hidden:false,value:0,volume:.24,attributes:{},
+      getContext:()=>context,addEventListener:(type,fn)=>{events[id+':'+type]=fn;},play:()=>Promise.resolve(),pause(){},focus(){},
+      setAttribute(key,value){this.attributes[key]=value;},getBoundingClientRect:()=>({x:20,y:150,width:300,height:210,top:150,bottom:360})});
+    return elements.get(id);
   }
+  const document={hidden:false,getElementById:element,addEventListener:(type,fn)=>{events[type]=fn;}};
+  const scope=vm.createContext({console,Math,performance:{now:()=>0},document,
+    window:{innerWidth:width,innerHeight:height,matchMedia:()=>({matches:false}),addEventListener:(type,fn)=>{events[type]=fn;}},
+    localStorage:{getItem:key=>{if(blockedStorage)throw Error('blocked');return storage.get(key)??null;},setItem:(key,value)=>{if(blockedStorage)throw Error('blocked');storage.set(key,value);}},
+    OffscreenCanvas:cachedArt?class {constructor(w,h){this.width=w;this.height=h;}getContext(){return context;}}:undefined,
+    CanvasRenderingContext2D:function(){},requestAnimationFrame(){}});
+  for(const source of sources) vm.runInContext(source,scope);
+  const run=code=>vm.runInContext(code,scope);
+  const quiet=()=>run("world.tutorial=false;world.nextObstacle=Infinity;world.nextRecord=Infinity;world.nextBonus=Infinity;");
+  return {run,events,element,storage,document,quiet};
 }
-run(`resetGame(); spawnTimer = -10000;
-  beats = [{x: player.x, y: getBeatY(48), size: 48, rot: 0}]; doJump(); update();`);
-assert.equal(run('STATE'), 'dead', 'jumping after contact still counts as collision');
-console.log('OK: 36 jump-clearance scenarios, customization combinations, double jump, collision, score, record, resize and mute.');
+{
+  const {run,events,element,storage}=fixture();
+  assert.equal(run('characterChoice.hair'),'blond'); assert.equal(run('characterChoice.view'),'profile');
+  assert.equal(run('characterChoice.outfit'),'white');
+  events['hair-pink:click']();events['pants-camo:click']();events['outfit-orange:click']();events['shoes-nike:click']();
+  assert.deepEqual(JSON.parse(storage.get('beat-runner-character')),{outfit:'orange',hair:'pink',pants:'camo',shoes:'nike',view:'profile'});
+  assert.equal(element('hair-pink').attributes['aria-pressed'],'true');
+  run("selectCharacter('hair','invalid');");assert.equal(run('characterChoice.hair'),'pink');
+  run(`for(const outfit of choiceOptions.outfit) for(const hair of choiceOptions.hair) for(const pants of choiceOptions.pants)
+    for(const shoes of choiceOptions.shoes) for(const view of choiceOptions.view) for(const pose of ['idle','celebrate','hurt','land'])
+    drawDJ(ctx,{x:0,y:0,outfit,hair,pants,shoes,view,pose,phase:5,running:true});`);
+  events['play:click']();assert.equal(run('world.lives'),3);assert.equal(element('menu-screen').hidden,true);
+  events['sound:click']();assert.equal(element('music').muted,true);assert.equal(element('sound').textContent,'SOM OFF');
+}
+{
+  const f=fixture(); f.events['play:click']();f.quiet();
+  f.run('doJump();update();doJump();doJump();');assert.equal(f.run('player.jumpCount'),2);
+  f.run('for(let i=0;i<200;i++)update();');assert.equal(f.run('player.onGround'),true);assert.equal(f.run('player.jumpCount'),0);
+  f.run('doJump();update();');const before=f.run('getGround()-player.y');
+  f.run("records=[{x:220,y:getFloor()-120,lift:120,r:13}];obstacles=[{x:250,y:getBeatY(36),w:48,h:36,type:'case'}];window.innerHeight=600;");
+  f.events.resize();assert.equal(f.run('getGround()-player.y'),before);assert.equal(f.run('records[0].y'),f.run('getFloor()-120'));
+}
+// Regression: one consistent jump clears a hazard even at the slow opening pace.
+let scenarios=0;
+for(const width of [390,1024])for(const distanceRun of [0,9000,30000])for(const size of [34,48])for(const gap of [60,100,150]) {
+  const f=fixture({width});f.events['play:click']();f.quiet();
+  f.run(`world.distance=${distanceRun};obstacles=[{x:player.x+${gap},y:getBeatY(${size}),w:${size},h:${size},type:'case',passed:false}];doJump();
+    for(let i=0;i<220;i++){update();if(player.onGround)break;}`);
+  assert.equal(f.run('world.hits'),0,`clearance width=${width} run=${distanceRun} size=${size} gap=${gap}`);
+  assert.equal(f.run('player.onGround'),true);assert.ok(f.run('obstacles.length===0||obstacles[0].x+obstacles[0].w<player.x-16'));
+  scenarios++;
+}
+{
+  const f=fixture();f.events['play:click']();f.quiet();
+  const addVinyl="records.push({x:player.x,y:player.y,lift:getFloor()-player.y,r:13});update();";
+  f.run(addVinyl);assert.equal(f.run('world.vinyls'),1);assert.equal(f.run('world.lives'),3);assert.equal(f.run('score'),15);
+  f.run('update();');assert.equal(f.run('score'),15,'a record is collected only once');
+  assert.ok(JSON.parse(f.storage.get('beat-runner-achievements')).includes('record'));
+  for(let i=0;i<7;i++)f.run(addVinyl);
+  assert.equal(f.run('world.drops'),1);assert.equal(f.run('world.dropFrames'),480);assert.equal(f.run('world.energy'),0);
+  f.run("obstacles=[{x:player.x,y:getBeatY(48),w:42,h:48,type:'speaker'}];update();");
+  assert.equal(f.run('world.lives'),3,'drop protects against contact');assert.equal(f.run('obstacles.length'),0);
+  f.run('for(let i=0;i<479;i++)update();');assert.equal(f.run('world.dropFrames'),0,'protection expires after 8 seconds');
+  f.run("obstacles=[{x:player.x,y:getBeatY(48),w:42,h:48,type:'speaker'}];update();");assert.equal(f.run('world.lives'),2);
+  f.run("obstacles=[{x:player.x,y:getBeatY(36),w:48,h:36,type:'case'}];update();");assert.equal(f.run('world.lives'),2,'recovery period prevents repeated damage');
+  f.run("world.invulnerable=0;obstacles=[{x:player.x,y:getBeatY(20),w:54,h:20,type:'cable'}];update();");assert.equal(f.run('world.lives'),1);
+  f.run("world.invulnerable=0;obstacles=[{x:player.x,y:getBeatY(48),w:42,h:48,type:'speaker'}];update();");assert.equal(f.run('STATE'),'dead');
+  assert.equal(JSON.parse(f.storage.get('beat-runner-best')),f.run('score'));
+  f.events['retry:click']();assert.equal(f.run('world.lives'),3);assert.equal(f.run('world.vinyls'),0);assert.equal(f.run('world.dropFrames'),0);
+  assert.ok(f.run("earned.has('record')&&earned.has('drop')"),'achievements survive retry');
+}
+{
+  const f=fixture();f.events['play:click']();f.quiet();
+  f.run('world.distance=4199;update();');assert.equal(f.run('getStage().id'),'party');assert.equal(f.run('level'),2);
+  f.run('world.distance=10499;update();');assert.equal(f.run('getStage().id'),'festival');assert.equal(f.run('level'),3);
+  f.run('world.elapsed=89.99;update();');assert.ok(f.run("earned.has('clean')"));
+  f.events['change-look:click']();assert.equal(f.run('STATE'),'start');assert.equal(f.element('menu-screen').hidden,false);
+}
+{
+  const f=fixture();f.events['play:click']();
+  f.run('for(let i=0;i<470;i++)update();');assert.equal(f.run('obstacles.length'),0,'opening training gives time to learn');
+  f.run('world.dodged=1;world.vinyls=1;world.jumps=1;update();');assert.equal(f.run('world.tutorial'),false);
+  assert.equal(JSON.parse(f.storage.get('beat-runner-training-v2')),true);
+  f.events['retry:click']();assert.equal(f.run('world.tutorial'),false);
+  f.events['replay-tutorial:click']();assert.equal(f.run('world.tutorial'),true);
+}
+// Jump trails must be out of standing reach, and a drop must not refill itself.
+{
+  const f=fixture();f.events['play:click']();f.quiet();
+  assert.equal(f.run('recordTouchesPlayer({x:player.x,y:getFloor()-150,r:13},playerBounds())'),false);
+  f.run('world.energy=100;activateDrop();');
+  for(let i=0;i<8;i++)f.run('records.push({x:player.x,y:player.y,lift:getFloor()-player.y,r:13});update();');
+  assert.equal(f.run('world.energy'),0);assert.equal(f.run('world.drops'),1);
+  f.run("const renderer = drawDJ; let dropLook; drawDJ = (ctx, look) => {dropLook=look;}; drawPlayer(); drawDJ=renderer;");
+  assert.equal(f.run('dropLook.view'),'profile','drop keeps the selected running angle');
+  assert.equal(f.run('dropLook.running'),true,'runner keeps moving naturally during a drop');
+  assert.notEqual(f.run('dropLook.pose'),'perform');
+  assert.ok(f.run('score')>=240,'collecting during a drop rewards points');
+  f.run('for(let i=0;i<480;i++)update();');assert.equal(f.run('world.dropFrames'),0);assert.equal(f.run('world.drops'),1);
+}
+{
+  const f=fixture();f.events['play:click']();
+  f.run("for(let i=0;i<12000&&STATE==='playing';i++)update();");
+  assert.equal(f.run('STATE'),'dead','idle ground collecting cannot sustain an automatic endless shield');
+}
+// Same fixed-step simulation at both refresh rates; no extra per-render update.
+const pacing=[];
+for(const fps of [20,30,60,144]) {
+  const f=fixture();f.events['play:click']();f.quiet();
+  for(let i=0;i<=fps*2;i++) f.run(`gameLoop(${i*1000/fps});`);
+  assert.equal(f.run('frame'),120);pacing.push(f.run('world.distance'));
+  const before=f.run('world.distance');f.events['pause:click']();f.run('gameLoop(90000);');assert.equal(f.run('world.distance'),before);
+  f.events['resume:click']();f.run('gameLoop(100000);');assert.equal(f.run('world.distance'),before,'resume never fast-forwards the set');
+  f.document.hidden=true;f.events.visibilitychange();assert.equal(f.run('STATE'),'paused');
+}
+assert.ok(pacing.every(value=>value===pacing[0]));
+{
+  const f=fixture({cachedArt:true});f.events['play:click']();f.quiet();
+  assert.equal(f.run('getRunSpeed()'),4.2);
+  f.run('gameLoop(0);const firstCache=backdropSurface;gameLoop(8);');
+  assert.equal(f.run('backdropSurface===firstCache'),true,'static artwork reused between renders');
+  assert.equal(f.run('frame'),0,'intermediate renders never advance physics');
+  f.run('const originalDJ=drawDJ;let visualPhase;drawDJ=(ctx,look)=>{visualPhase=look.phase;};drawPlayer(.5);drawDJ=originalDJ;');
+  assert.ok(f.run('visualPhase>player.runFrame'),'stride renders between simulation steps');
+  f.run('drawRecord(ctx,{x:200,y:200,r:13},0,false);const recordCache=vinylSurface;drawRecord(ctx,{x:300,y:200,r:13},1,false);');
+  assert.equal(f.run('vinylSurface===recordCache'),true,'record artwork reused');
+  f.run('world.distance=5000;gameLoop(17);');assert.equal(f.run('backdropSurface===firstCache'),false,'new stage refreshes artwork');
+  f.run('const offsets=[];ctx.fillRect=(...args)=>offsets.push(args);drawStageObstacle(ctx,{x:100,y:200,w:40,h:30,type:"cable"},2);');
+  assert.equal(f.run('offsets[0][0]'),102,'hazards follow interpolated world movement');
+}
+
+{
+  const f=fixture({blockedStorage:true});f.events['play:click']();f.quiet();f.run('unlock("record");update();');
+  assert.equal(f.run('STATE'),'playing','game works when browser storage is unavailable');
+  f.events['change-look:click']();f.run('gameLoop(0);');
+}
+
+// Special pickups apply once, remain independent from vinyl energy, and reset on retry.
+{
+  const f=fixture({cachedArt:true});f.events['play:click']();f.quiet();
+  for(const type of ['usb','diamond','backstage','heart'])f.run(`drawBonus(ctx,{type:'${type}',x:200,y:200},.5);`);
+  assert.equal(f.run('bonusSprites.size'),4);
+  f.run("bonuses=[{type:'usb',x:player.x,y:player.y,lift:55,r:18}];update();");
+  assert.equal(f.run('score'),100);assert.equal(f.run('bonuses.length'),0);
+  f.run('update();');assert.equal(f.run('score'),100);
+  f.run("collectBonus({type:'diamond',x:0,y:0});");assert.equal(f.run('score'),250);
+  assert.equal(f.run('world.vinyls'),0);assert.equal(f.run('world.energy'),0);
+  f.run("collectBonus({type:'backstage',x:0,y:0});hitObstacle({x:0,y:0});");
+  assert.equal(f.run('world.shield'),0);assert.equal(f.run('world.lives'),3);assert.equal(f.run('world.hits'),0);
+  f.run("world.invulnerable=0;hitObstacle({x:0,y:0});");assert.equal(f.run('world.lives'),2);
+  f.run("collectBonus({type:'heart',x:0,y:0});collectBonus({type:'heart',x:0,y:0});");
+  assert.equal(f.run('world.lives'),3,'hearts cannot exceed three lives');
+  f.run("world.lives=2;world.bonusSerial=0;const kinds=[];for(let i=0;i<4;i++)kinds.push(spawnBonus().type);");
+  assert.equal(f.run('kinds.join()'),'usb,diamond,backstage,heart');
+  f.run('window.innerHeight=600;');f.events.resize();assert.equal(f.run('bonuses[0].y'),f.run('getFloor()-105'));
+  f.run("collectBonus({type:'backstage',x:0,y:0});world.dropFrames=1;hitObstacle({x:0,y:0});");
+  assert.equal(f.run('world.shield'),1,'drop does not spend the backstage protection');
+  f.events['retry:click']();assert.equal(f.run('bonuses.length'),0);assert.equal(f.run('world.shield'),0);
+  f.run('world.nextBonus=0;world.elapsed=0;update();');assert.equal(f.run('bonuses.length'),0,'training opening stays simple');
+  f.run('world.tutorial=false;update();');assert.equal(f.run('bonuses.length'),1);
+}
+
+console.log(`OK: ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; blocked storage.`);

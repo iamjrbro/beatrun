@@ -2,71 +2,55 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Beat Runner</title>
-  <link rel="stylesheet" href="style.css?v=20261021-10">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080c18">
+  <title>Beat Runner · LUKETA</title>
+  <link rel="stylesheet" href="style.css?v=20261026-items1">
 </head>
 <body>
-  <canvas id="game" tabindex="0" aria-label="Beat Runner: use espaço, seta para cima ou toque para pular os obstáculos musicais. Duplo pulo disponível."></canvas>
-  <button id="sound" type="button" aria-label="Silenciar áudio" aria-pressed="false">SOM ON</button>
-  <div id="start-controls">
-  <section id="wardrobe" aria-label="Escolha seu personagem">
-    <div class="choice-row" role="group" aria-label="Roupa">
-      <span>LOOK</span>
-      <button id="outfit-black" type="button" aria-pressed="true">Polo preta</button>
-      <button id="outfit-white" type="button" aria-pressed="false">Branca lisa</button>
-      <button id="outfit-neon" type="button" aria-pressed="false">Moletom neon</button>
-      <button id="outfit-orange" type="button" aria-pressed="false">Moletom laranja</button>
-    </div>
-    <div class="choice-row" role="group" aria-label="Cabelo">
-      <span>CABELO</span>
-      <button id="hair-blond" type="button" aria-pressed="true">Loiro</button>
-      <button id="hair-pink" type="button" aria-pressed="false">Rosa</button>
-    </div>
-    <div class="choice-row" role="group" aria-label="Calça">
-      <span>JEANS</span>
-      <button id="pants-sparkle" type="button" aria-pressed="true">Com brilhos</button>
-      <button id="pants-plain" type="button" aria-pressed="false">Liso</button>
-      <button id="pants-camo" type="button" aria-pressed="false">Militar</button>
-    </div>
-    <div class="choice-row" role="group" aria-label="Calçado">
-      <span>PÉS</span>
-      <button id="shoes-sneakers" type="button" aria-pressed="true">Tênis</button>
-      <button id="shoes-boots" type="button" aria-pressed="false">Bota Timberland</button>
-      <button id="shoes-nike" type="button" aria-pressed="false">Nike branco</button>
-    </div>
-    <div class="choice-row" role="group" aria-label="Ângulo do personagem">
-      <span>VISTA</span>
-      <button id="view-front" type="button" aria-pressed="true">De frente</button>
-      <button id="view-profile" type="button" aria-pressed="false">De lado</button>
+  <canvas id="game" tabindex="0" aria-label="Beat Runner: colete vinis, pendrives, diamantes, pulseiras de backstage e corações; pule caixas de som, cases e cabos. Espaço, seta para cima ou toque para pular; dois toques para pulo duplo."></canvas>
+  <section id="menu-screen" aria-label="Prepare seu set">
+    <div class="menu-shell">
+      <header class="intro-title"><p class="eyebrow">UM JOGO FEITO PRA VOCÊ</p><h1>BEAT RUNNER</h1><p>Para sempre o DJ</p></header>
+      <div class="persona"><div id="portrait-anchor" aria-hidden="true"></div><p class="artist">LUKETA <span>NO COMANDO DO SOM</span></p><p id="start-best" class="muted"></p></div>
+      <div class="customizer">
+        <div class="section-heading"><span>01 / SEU LOOK</span><span class="pill">3 CHANCES POR SET</span></div>
+        <section id="wardrobe" aria-label="Escolha seu personagem">
+          <div class="choice-row outfit-row" role="group" aria-label="Roupa"><span>LOOK</span><button id="outfit-black" type="button" aria-pressed="true">Polo preta</button><button id="outfit-white" type="button" aria-pressed="false">Branca lisa</button><button id="outfit-neon" type="button" aria-pressed="false">Moletom neon</button><button id="outfit-orange" type="button" aria-pressed="false">Moletom laranja</button></div>
+          <div class="choice-row" role="group" aria-label="Cabelo"><span>CABELO</span><button id="hair-blond" type="button" aria-pressed="true">Loiro</button><button id="hair-pink" type="button" aria-pressed="false">Rosa</button></div>
+          <div class="choice-row" role="group" aria-label="Calça"><span>JEANS</span><button id="pants-sparkle" type="button" aria-pressed="true">Com brilhos</button><button id="pants-plain" type="button" aria-pressed="false">Liso</button><button id="pants-camo" type="button" aria-pressed="false">Militar</button></div>
+          <div class="choice-row" role="group" aria-label="Calçado"><span>PÉS</span><button id="shoes-sneakers" type="button" aria-pressed="true">Tênis</button><button id="shoes-boots" type="button" aria-pressed="false">Bota Timberland</button><button id="shoes-nike" type="button" aria-pressed="false">Nike branco</button></div>
+          <div class="choice-row" role="group" aria-label="Ângulo durante a corrida"><span>CORRIDA</span><button id="view-front" type="button" aria-pressed="false">De frente</button><button id="view-profile" type="button" aria-pressed="true">De lado</button></div>
+        </section>
+        <div class="how-to"><span class="record-dot" aria-hidden="true">◎</span><p><strong>Vinis são para pegar.</strong> Caixas, cases e cabos são para pular. Oito vinis carregam um drop com proteção.</p></div>
+        <ul class="bonus-guide" aria-label="Itens especiais">
+          <li><strong>▰ PENDRIVE</strong> Set secreto: +100 pontos</li>
+          <li><strong>◇ DIAMANTE</strong> +150 pontos</li>
+          <li><strong>▱ BACKSTAGE</strong> Protege de uma colisão</li>
+          <li><strong>♥ CORAÇÃO</strong> Recupera uma chance</li>
+        </ul>
+        <button id="play" class="primary" type="button">SOLTA O TRAP <span aria-hidden="true">↗</span></button>
+        <p id="training-label" class="muted">Primeira vez? Seu primeiro set tem treino guiado.</p>
+        <p class="start-help">ESPAÇO / ↑ / TOQUE · PULO DUPLO DISPONÍVEL</p>
+      </div>
+      <section class="collection" aria-label="Conquistas"><div class="section-heading"><span>02 / SEUS MOMENTOS</span><span id="achievement-count">0 / 5</span></div><div id="achievements" class="achievement-grid"></div><button id="replay-tutorial" class="text-button" type="button">REPETIR O TREINO GUIADO</button></section>
     </div>
   </section>
-  <button id="play" type="button">SOLTA O TRAP</button>
-  <p class="start-help">ESPAÇO / ↑ / TOQUE · PULO DUPLO</p>
-  <p id="start-best"></p>
-  </div>
-  <button id="change-look" type="button" hidden>ESCOLHER PERSONAGEM</button>
   <div id="hud" hidden>
-    <div class="hud-box">
-      <span class="hud-label">SCORE</span>
-      <span class="hud-val" id="score">0</span>
-    </div>
-    <div class="hud-box" id="levelBox">
-      <span class="hud-label">NÍVEL</span>
-      <span class="hud-val" id="level">1</span>
-    </div>
-    <div class="hud-box">
-      <span class="hud-label">COMBO</span>
-      <span class="hud-val" id="combo">x0</span>
-    </div>
+    <div class="stage-info"><span id="stage-label">SET 01 · ESTÚDIO</span><small id="stage-progress">PRÓXIMO: PRIMEIRA PISTA</small></div>
+    <div class="hud-stat"><small>PONTOS</small><strong id="score">0</strong></div>
+    <div class="hud-stat"><small>VINIS</small><strong id="vinyl-count">0</strong></div>
+    <div class="hud-stat"><small>CHANCES</small><strong id="lives" aria-label="3 chances">♥ ♥ ♥</strong></div>
+    <div class="energy-row"><span id="drop-label">PRÓXIMO DROP</span><progress id="energy" max="100" value="0" aria-label="Energia para o drop"></progress><span id="combo">x0</span></div>
   </div>
-
-  <!-- Música de fundo: coloque um arquivo music.mp3 na mesma pasta -->
-  <audio id="music" loop>
-    <source src="music.mp3" type="audio/mpeg">
-  </audio>
-
-  <script src="character.js?v=20261021-10"></script>
-  <script src="game.js?v=20261021-11"></script>
+  <div id="coach" role="status" aria-live="polite" hidden></div>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+  <section id="result-screen" class="modal-screen" aria-label="Resultado do set" hidden><div class="result-card"><p class="eyebrow">LUKETA · FIM DO SET</p><h2>Até os brabos erram o cue. Solta outra!</h2><p id="result-message"></p><div class="result-stats"><div><small>PONTOS</small><strong id="result-score">0</strong></div><div><small>VINIS</small><strong id="result-vinyls">0</strong></div><div><small>DROPS</small><strong id="result-drops">0</strong></div></div><p id="result-best" class="muted"></p><button id="retry" class="primary" type="button">MAIS UM SET</button><button id="change-look" class="secondary" type="button">ESCOLHER PERSONAGEM</button></div></section>
+  <section id="pause-screen" class="modal-screen" aria-label="Set em pausa" hidden><div class="result-card"><p class="eyebrow">O SOM ESPERA POR VOCÊ</p><h2>Set em pausa.</h2><button id="resume" class="primary" type="button">CONTINUAR O SET</button></div></section>
+  <div class="utility"><button id="pause" type="button" hidden>PAUSAR</button><button id="sound" type="button" aria-label="Silenciar áudio" aria-pressed="false">SOM ON</button></div>
+  <audio id="music" loop preload="none"><source src="music.mp3" type="audio/mpeg"></audio>
+  <script src="character.js?v=20261026-items1"></script>
+  <script src="stage-art.js?v=20261026-items1"></script>
+  <script src="game.js?v=20261026-items1"></script>
 </body>
 </html>
