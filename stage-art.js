@@ -298,7 +298,7 @@ function drawForestLight(ctx,{w,h,floor,time,reducedMotion}){
   ctx.beginPath();ctx.ellipse(x-4,y-3,5,2,-.5,0,Math.PI*2);ctx.ellipse(x+4,y-3,5,2,.5,0,Math.PI*2);ctx.fill();artCircle(ctx,x,y,2.5,'#cdeaf2');ctx.restore();
 }
 function drawApartment213(ctx,{w,base}){
-  // Imagined room; the supplied real-world detail is the number 213.
+  // Imagined room with the supplied door number and personal wall inscription.
   artBox(ctx,0,base-230,w,260,'#473b43',0);
   for(let x=0;x<w;x+=105){ctx.fillStyle='#62505a44';ctx.fillRect(x,base-230,2,255);}
   const doorW=Math.max(47,w*.09),doorX=w*.07;
@@ -316,6 +316,7 @@ function drawApartment213(ctx,{w,base}){
   artBox(ctx,w*.69,base-138,8,21,'#c1b1a5',4);ctx.strokeStyle='#302c39';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(w*.70+15,base-125,11,17,0,0,Math.PI*2);ctx.stroke();
   ctx.strokeStyle='#282936';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(w*.69,base-115);ctx.bezierCurveTo(w*.55,base+30,w*.25,base-30,w*.29,base+15);ctx.stroke();
   for(let i=0;i<3;i++)artBox(ctx,w*.42+i*13,base+4,11,4,'#b8a795',1);
+  ctx.fillStyle='#e7c9a7';ctx.font='bold '+Math.max(12,Math.min(24,w*.025))+'px monospace';ctx.textAlign='center';ctx.fillText('213 tô no mesmo AP',w*.44,base-175);
   ctx.fillStyle='#d3b69b';ctx.font='8px monospace';ctx.textAlign='left';ctx.fillText('REC ●',w*.35,base-145);
 }
 function drawCenaStage(ctx,{w,base}){
