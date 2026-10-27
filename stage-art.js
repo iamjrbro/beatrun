@@ -316,7 +316,7 @@ function drawApartment213(ctx,{w,base}){
   artBox(ctx,w*.69,base-138,8,21,'#c1b1a5',4);ctx.strokeStyle='#302c39';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(w*.70+15,base-125,11,17,0,0,Math.PI*2);ctx.stroke();
   ctx.strokeStyle='#282936';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(w*.69,base-115);ctx.bezierCurveTo(w*.55,base+30,w*.25,base-30,w*.29,base+15);ctx.stroke();
   for(let i=0;i<3;i++)artBox(ctx,w*.42+i*13,base+4,11,4,'#b8a795',1);
-  ctx.fillStyle='#e7c9a7';ctx.font='bold '+Math.max(12,Math.min(24,w*.025))+'px monospace';ctx.textAlign='center';ctx.fillText('213 tô no mesmo AP',w*.44,base-175);
+  ctx.fillStyle='#e7c9a7';ctx.font='bold '+Math.max(12,Math.min(24,w*.025))+'px monospace';ctx.textAlign='center';ctx.fillText('213 tô no memo apê',w*.44,base-175);
   ctx.fillStyle='#d3b69b';ctx.font='8px monospace';ctx.textAlign='left';ctx.fillText('REC ●',w*.35,base-145);
 }
 function drawCenaStage(ctx,{w,base}){
