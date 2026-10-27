@@ -25,14 +25,24 @@ for (const [key, values] of Object.entries(choiceOptions)) {
 }
 const STAGES = [
   {id:'studio',name:'ESTÚDIO',next:'PRIMEIRA PISTA',at:0,accent:'#81f7d4',sky:'#080f1b',grid:'#25413755',bpm:88,volume:0.24},
+  {id:'ap213',name:'APARTAMENTO DO SPIKE · 213',scene:'apartment',at:2100,accent:'#e3bc8d',sky:'#251e2c',grid:'#70585055',bpm:92,volume:.26,announcement:'APÊ 213. POUCO ESPAÇO, MUITO SONHO.'},
   {id:'party',name:'PRIMEIRA PISTA',next:'FESTIVAL',at:4200,accent:'#79d2ef',sky:'#0c1228',grid:'#2b527155',bpm:108,volume:0.33},
-  {id:'festival',name:'FESTIVAL',next:'O PALCO É SEU',at:10500,accent:'#c7a7f4',sky:'#160f2a',grid:'#57457055',bpm:126,volume:0.42},
+  {id:'festival',name:'FESTIVAL',at:10500,accent:'#c7a7f4',sky:'#160f2a',grid:'#57457055',bpm:126,volume:0.42},
+  {id:'cena2k',name:'CENA2K FESTIVAL',scene:'cena',at:16500,accent:'#ec92d1',sky:'#18142b',grid:'#734c7855',bpm:128,volume:.42,announcement:'DO APÊ 213 PRA CENA. SOLTA O TRAP!'},
+  {id:'rooftop',name:'TERRAÇO LUNAR',scene:'rooftop',at:23000,accent:'#e8a5ce',sky:'#19162d',grid:'#754b7255',bpm:120,volume:.36,announcement:'O SOM CHEGOU AO TOPO DA CIDADE.'},
+  {id:'metro',name:'ÚLTIMO METRÔ',scene:'metro',at:30000,accent:'#8fdfe2',sky:'#0b2029',grid:'#42666d55',bpm:116,volume:.34,announcement:'ÚLTIMO TREM. MAIS UM SET.'},
+  {id:'forest',name:'BOSQUE DOS ECOS',scene:'forest',at:38000,accent:'#a4d793',sky:'#091d1b',grid:'#42614b55',bpm:104,volume:.29,announcement:'TEM UM SOM ESCONDIDO ENTRE AS ÁRVORES.'},
+  {id:'lake',name:'LAGO DO SILÊNCIO',scene:'lake',at:47000,accent:'#99cfe8',sky:'#102235',grid:'#42688a55',bpm:100,volume:.28,announcement:'ATÉ A ÁGUA ENTROU NO RITMO.'},
+  {id:'desert',name:'DUNAS DO CREPÚSCULO',scene:'desert',at:57000,accent:'#eac28f',sky:'#302037',grid:'#986e5655',bpm:112,volume:.32,announcement:'O GRAVE ATRAVESSA AS DUNAS.'},
+  {id:'temple',name:'SALÃO DAS HORAS',scene:'temple',at:68000,accent:'#d6cc9f',sky:'#1c202d',grid:'#6d6b6555',bpm:108,volume:.30,announcement:'AQUI O TEMPO SEGUE A SUA BATIDA.'},
+  {id:'dawn',name:'AMANHECER',scene:'dawn',at:79000,accent:'#f0c7a4',sky:'#343047',grid:'#8e726855',bpm:118,volume:.35,announcement:'A NOITE VIROU DIA. O SOM É SEU.'},
 ];
 const ACHIEVEMENTS = [
   {id:'record',name:'Esse som é seu',description:'Colete seu primeiro vinil.'},
   {id:'drop',name:'Solta o Trap',description:'Solte seu primeiro drop.'},
   {id:'party',name:'Da sala pra pista',description:'Chegue à Primeira Pista.'},
   {id:'festival',name:'LUKETA no topo',description:'Chegue ao Festival.'},
+  {id:'dawn',name:'Até o sol nascer',description:'Complete a turnê dos doze cenários.'},
   {id:'clean',name:'Para sempre o DJ',description:'Toque 90 segundos sem perder chances.'},
 ];
 const earned = new Set(readStored('beat-runner-achievements', []).filter?.(id => ACHIEVEMENTS.some(a => a.id === id)) || []);
@@ -104,7 +114,7 @@ function startMusic() {
 }
 function playBeat() {
   const boost = world.dropFrames > 0 ? 1.3 : 1;
-  playTone(60, 'sine', 0.13, (0.035 + world.stageIndex * 0.012) * boost);
+  playTone(60, 'sine', 0.13, (0.035 + Math.min(2,world.stageIndex) * 0.012) * boost);
   if (world.stageIndex >= 1) playTone(1800, 'triangle', 0.025, 0.009 * boost);
   if (world.stageIndex >= 2 && frame % 2 === 0) playTone(160, 'triangle', 0.05, 0.025 * boost);
 }
@@ -121,7 +131,7 @@ function unlock(id) {
 function refreshMenu() {
   setText('start-best', (playMode==='chill'?'MELHOR SET DE BOA: '+chillBest:'SEU MELHOR SET: '+highScore) + ' PTS');
   setText('training-label', readStored('beat-runner-training-v2', false) && !forceTutorial
-    ? 'Estúdio → Primeira Pista → Festival. Até onde vai o seu set?'
+    ? 'Doze cenários, do estúdio ao amanhecer. Até onde vai o seu set?'
     : 'Seu primeiro set tem treino guiado e três chances.');
   renderAchievements();
 }
@@ -269,7 +279,7 @@ function collectBonus(item) {
 }
 function reactCrowd(){
   world.crowdFrames=100;
-  if(muted||world.stageIndex===0)return;
+  if(muted||world.stageIndex===0||getStage().scene==='apartment')return;
   try{
     const audio=getAudio();
     if(!cheerBuffer){cheerBuffer=audio.createBuffer(1,Math.floor(audio.sampleRate*.38),audio.sampleRate);const data=cheerBuffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(Math.sin(i/audio.sampleRate*70)**8);}
@@ -329,7 +339,7 @@ function updateHud() {
   setText('score',score); setText('vinyl-count',world.vinyls); setText('combo','x'+combo);
   setText('lives',world.mode==='chill'?'∞':Array.from({length:3},(_,i)=>i<world.lives?'♥':'♡').join(' '));
   if (hudLives !== world.lives) { el('lives').setAttribute('aria-label',world.mode==='chill'?'Modo de boa, sem perder vidas':world.lives+' chances'); hudLives=world.lives; }
-  setText('stage-label',`SET 0${world.stageIndex+1} · ${getStage().name}`);
+  setText('stage-label',`SET ${String(world.stageIndex+1).padStart(2,'0')} · ${getStage().name}`);
   const next = STAGES[world.stageIndex+1];
   setText('stage-progress',next ? `${Math.floor(Math.min(100, (world.distance-getStage().at)/(next.at-getStage().at)*100))}% → ${next.name}` : 'LUKETA · O PALCO É SEU');
   const energyValue = world.dropFrames > 0 ? world.dropFrames/480*100 : world.energy;
@@ -346,12 +356,13 @@ function update() {
   world.distance += speed; player.runFrame += getStrideStep();
   world.pulse *= 0.9; world.beatClock += 1/60;
   if (world.beatClock >= 60/getStage().bpm) { world.beatClock -= 60/getStage().bpm; world.pulse = 1; playBeat(); }
-  const next = STAGES[world.stageIndex+1];
-  if (next && world.distance >= next.at) {
+  let next = STAGES[world.stageIndex+1];
+  while (next && world.distance >= next.at) {
     hudDirty = true;
     world.stageIndex++; level = world.stageIndex+1; unlock(next.id);reactCrowd();
-    world.announcement = next.id === 'party' ? 'DA SALA PRA PISTA. A NOITE É SUA.' : 'LUKETA NO PALCO. PARA SEMPRE O DJ.';
+    world.announcement = next.announcement || (next.id === 'party' ? 'DA SALA PRA PISTA. A NOITE É SUA.' : 'LUKETA NO PALCO. PARA SEMPRE O DJ.');
     world.announcementFrames = 240; player.pose = 'celebrate'; player.poseFrames = 65;
+    next=STAGES[world.stageIndex+1];
   }
   if (world.elapsed >= 90 && world.hits === 0) unlock('clean');
   if (world.dropFrames > 0) { world.dropFrames--; if (world.dropFrames === 0 && world.energy >= 100) activateDrop(); }

@@ -77,8 +77,8 @@ for(const width of [390,1024])for(const distanceRun of [0,9000,30000])for(const 
 }
 {
   const f=fixture();f.events['play:click']();f.quiet();
-  f.run('world.distance=4199;update();');assert.equal(f.run('getStage().id'),'party');assert.equal(f.run('level'),2);
-  f.run('world.distance=10499;update();');assert.equal(f.run('getStage().id'),'festival');assert.equal(f.run('level'),3);
+  f.run('world.distance=4199;update();');assert.equal(f.run('getStage().id'),'party');assert.equal(f.run('level'),3);
+  f.run('world.distance=10499;update();');assert.equal(f.run('getStage().id'),'festival');assert.equal(f.run('level'),4);
   f.run('world.elapsed=89.99;update();');assert.ok(f.run("earned.has('clean')"));
   f.events['change-look:click']();assert.equal(f.run('STATE'),'start');assert.equal(f.element('menu-screen').hidden,false);
 }
@@ -199,4 +199,24 @@ assert.ok(pacing.every(value=>value===pacing[0]));
   assert.equal(f.run('world.mode'),'challenge');assert.equal(f.run('world.lives'),3);
 }
 
-console.log(`OK: ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; blocked storage.`);
+
+// The full twelve-scene tour keeps ordered milestones, bounded art caching and a correct twelfth-set label.
+{
+  for(const [width,height]of [[390,844],[1280,720]]){
+    const f=fixture({width,height,cachedArt:true});f.events['play:click']();f.quiet();
+    assert.equal(f.run('STAGES.length'),12);assert.equal(f.run('new Set(STAGES.map(s=>s.id)).size'),12);
+    for(let i=0;i<12;i++){
+      if(i>0){f.run(`world.distance=STAGES[${i}].at;update();`);assert.equal(f.run('world.stageIndex'),i);}
+      assert.equal(f.run('getStage().id'),f.run(`STAGES[${i}].id`));
+      f.run('updateHud();gameLoop(0);var cachedStage=backdropSurface;gameLoop(8);');
+      assert.equal(f.run('backdropSurface===cachedStage'),true);
+      f.run('renderStageFrame(ctx,{w:canvas.width,h:canvas.height,floor:getFloor(),stage:getStage(),time:3,scroll:world.distance,pulse:1,drop:true,reducedMotion:true,crowd:.5});');
+    }
+    assert.equal(f.element('stage-label').textContent,'SET 12 · AMANHECER');
+    assert.ok(f.run("earned.has('dawn')"));
+    assert.ok(f.run('STAGES.every((s,i)=>s.volume>=0&&s.volume<=.42&&(i===0||s.at>STAGES[i-1].at))'));
+    assert.equal(f.run('getRunSpeed()'),7.2,'long tour keeps the existing speed cap');
+    f.run('world.distance+=99999;update();');assert.equal(f.run('world.stageIndex'),11);
+  }
+}
+console.log(`OK: ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; blocked storage.`);
