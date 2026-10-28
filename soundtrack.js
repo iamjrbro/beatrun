@@ -10,7 +10,8 @@ function parseSpotifyLink(input){
 }
 (()=>{
   let controller=null,api=null,apiLoading=null,selected=false,request=0,external=false;
-  let silent=false;
+  let silent=false,started=false;
+  function pauseEmbed(){if(started)controller?.pause();}
   function status(text){setText('spotify-status',text);}
   function getApi(){
     if(api)return Promise.resolve(api);if(apiLoading)return apiLoading;
@@ -29,19 +30,19 @@ function parseSpotifyLink(input){
     try{
       const ready=await getApi();if(token!==request)return false;
       music.pause();selected=true;external=false;
-      if(controller){controller.pause();controller.loadEntity(uri);}
-      else await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error('Player indisponível')),12000);ready.createController(el('spotify-embed'),{uri,width:'100%',height:152},value=>{clearTimeout(timeout);controller=value;resolve();});});
-      if(token!==request){controller.pause();return false;}
-      if(silent)controller.pause();
+      if(controller){pauseEmbed();started=false;controller.loadEntity(uri);}
+      else await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error('Player indisponível')),12000);ready.createController(el('spotify-embed'),{uri,width:'100%',height:152},value=>{clearTimeout(timeout);controller=value;controller.addListener?.('playback_started',()=>{started=true;});controller.addListener?.('playback_update',event=>{if(event?.data?.position>0)started=true;});resolve();});});
+      if(token!==request){pauseEmbed();return false;}
+      if(silent)pauseEmbed();
       status('Player pronto. Dê play nele e comece o set. Se aparecer Prévia, use Tocar no Spotify para ouvir pela sua conta.');return true;
     }catch{if(token!==request)return false;selected=false;status('Não consegui carregar o Spotify. Tente novamente ou use a trilha do jogo.');return false;}
     finally{el('spotify-load').disabled=false;}
   }
   el('spotify-load').addEventListener('click',load);
-  el('spotify-default').addEventListener('click',()=>{request++;selected=false;external=false;controller?.pause();status('Trilha original selecionada.');if(STATE==='playing')startMusic();});
-  function useExternal(){request++;selected=true;external=true;music.pause();controller?.pause();status('Trilha do jogo desligada. Controle a música no app ou na aba do Spotify; os sons do jogo continuam separados.');}
+  el('spotify-default').addEventListener('click',()=>{request++;selected=false;external=false;pauseEmbed();status('Trilha original selecionada.');if(STATE==='playing')startMusic();});
+  function useExternal(){request++;selected=true;external=true;music.pause();pauseEmbed();status('Trilha do jogo desligada. Controle a música no app ou na aba do Spotify; os sons do jogo continuam separados.');}
   el('spotify-external').addEventListener('click',useExternal);el('spotify-open-link').addEventListener('click',useExternal);
   window.GameMusic={load,isSpotify:()=>selected,
-    pause(){controller?.pause();},resume(){if(selected&&!silent&&!external)controller?.resume();},
-    setMuted(value){silent=value;if(value)controller?.pause();else if(selected&&!external&&STATE==='playing')controller?.resume();}};
+    pause(){pauseEmbed();},resume(){if(selected&&!silent&&!external&&started)controller?.resume();},
+    setMuted(value){silent=value;if(value)pauseEmbed();else if(selected&&!external&&started&&STATE==='playing')controller?.resume();}};
 })();

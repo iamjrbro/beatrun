@@ -305,10 +305,11 @@ for(const width of [390,1024])for(const kind of ['energy','lean']){
 // The official Spotify controller is mocked here: loading, replacement, pause and mute must stay in sync.
 {
   const f=fixture(),id='4cOdK2wGLETKBW3PvgPWqT';
-  f.run(`var spotifyCalls={pause:0,resume:0,load:0};document.createElement=()=>({remove(){}});document.head={appendChild(){window.onSpotifyIframeApiReady({createController(node,options,callback){callback({pause(){spotifyCalls.pause++;},resume(){spotifyCalls.resume++;},loadEntity(){spotifyCalls.load++;}});}});}};`);
+  f.run(`var spotifyCalls={pause:0,resume:0,load:0};document.createElement=()=>({remove(){}});document.head={appendChild(){window.onSpotifyIframeApiReady({createController(node,options,callback){callback({addListener(name,fn){if(name==='playback_started')spotifyCalls.start=fn;},pause(){spotifyCalls.pause++;},resume(){spotifyCalls.resume++;},loadEntity(){spotifyCalls.load++;}});}});}};`);
   f.element('spotify-url').value='https://open.spotify.com/track/'+id;
   assert.equal(await f.run('window.GameMusic.load();'),true);assert.equal(f.run('window.GameMusic.isSpotify()'),true);
-  f.events['play:click']();assert.equal(f.run('spotifyCalls.resume'),1);
+  f.run('window.GameMusic.pause();window.GameMusic.setMuted(true);window.GameMusic.setMuted(false);');assert.equal(f.run('spotifyCalls.pause'),0,'unstarted embed never receives pause commands');
+  f.run('spotifyCalls.start();');f.events['play:click']();assert.equal(f.run('spotifyCalls.resume'),1);
   f.events['pause:click']();assert.ok(f.run('spotifyCalls.pause')>0);
   await f.run('window.GameMusic.load();');assert.equal(f.run('spotifyCalls.load'),1);
   f.events['sound:click']();const before=f.run('spotifyCalls.resume');f.events['resume:click']();assert.equal(f.run('spotifyCalls.resume'),before,'muted game cannot restart Spotify');
