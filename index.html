@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#080c18">
   <title>Beat Runner · LUKETA</title>
-  <link rel="stylesheet" href="style.css?v=20261028-powers2">
+  <link rel="stylesheet" href="style.css?v=20261028-run-profile">
 </head>
 <body>
-  <canvas id="game" tabindex="0" aria-label="Beat Runner: colete vinis e poderes; pule caixas e abaixe para estruturas que caem. Espaço, seta para cima ou toque para pular; dois toques para pulo duplo."></canvas>
+  <canvas id="game" tabindex="0" aria-label="Beat Runner: colete vinis, pendrives, diamantes, pulseiras de backstage e corações; pule caixas de som, cases e cabos. Espaço, seta para cima ou toque para pular; dois toques para pulo duplo."></canvas>
   <section id="menu-screen" aria-label="Prepare seu set">
     <div class="menu-shell">
       <header class="intro-title"><p class="eyebrow">UM JOGO FEITO PRA VOCÊ</p><h1>BEAT RUNNER</h1><p>Para sempre o DJ</p></header>
@@ -22,14 +22,12 @@
           <div class="choice-row" role="group" aria-label="Calçado"><span>PÉS</span><button id="shoes-sneakers" type="button" aria-pressed="true">Tênis</button><button id="shoes-boots" type="button" aria-pressed="false">Bota Timberland</button><button id="shoes-nike" type="button" aria-pressed="false">Nike branco</button></div>
           <div class="choice-row" role="group" aria-label="Ângulo durante a corrida"><span>CORRIDA</span><button id="view-front" type="button" aria-pressed="false">De frente</button><button id="view-profile" type="button" aria-pressed="true">De lado</button></div>
         </section>
-        <div class="how-to"><span class="record-dot" aria-hidden="true">◎</span><p><strong>Vinis são para pegar.</strong> Caixas, cases e cabos são para pular. Cada vinil vale uma moeda na lojinha e carrega o drop. Oito ativam proteção por 8s.</p></div>
+        <div class="how-to"><span class="record-dot" aria-hidden="true">◎</span><p><strong>Vinis são para pegar.</strong> Caixas, cases e cabos são para pular. Oito vinis carregam um drop com proteção.</p></div>
         <ul class="bonus-guide" aria-label="Itens especiais">
-          <li><strong>▰ PENDRIVE</strong> Ímã de vinis por 6s +100 pontos</li>
-          <li><strong>⛓ CORRENTE</strong> Pontos dos vinis em dobro por 8s +150 pontos</li>
+          <li><strong>▰ PENDRIVE</strong> Set secreto: +100 pontos</li>
+          <li><strong>◇ DIAMANTE</strong> +150 pontos</li>
           <li><strong>▱ BACKSTAGE</strong> Protege de uma colisão</li>
-          <li><strong>♥ CORAÇÃO</strong> Recupera uma chance; vida cheia dá escudo</li>
-          <li><strong>▤ ENERGÉTICO</strong> Mais rápido por 4s</li>
-          <li><strong>▱ COPO ROXO · LEAN</strong> Mais lento por 4s: desvie dele!</li>
+          <li><strong>♥ CORAÇÃO</strong> Recupera uma chance</li>
         </ul>
         <div class="mode-picker" role="group" aria-label="Modo de jogo"><button id="mode-challenge" type="button" aria-pressed="true">Desafio</button><button id="mode-chill" type="button" aria-pressed="false">De boa</button></div>
         <p id="mode-description" class="muted">Três chances. Colete, desvie e tente bater seu recorde.</p>
@@ -37,10 +35,9 @@
         <button id="play" class="primary" type="button">SOLTA O TRAP <span aria-hidden="true">↗</span></button>
         <p id="training-label" class="muted">Primeira vez? Seu primeiro set tem treino guiado.</p>
         <details class="tour-route"><summary>A turnê · 12 cenários</summary><p>Estúdio → 213 → Primeira Pista → Festival → Cena2k Festival → Terraço Lunar → Último Metrô → Bosque dos Ecos → Lago do Silêncio → Dunas do Crepúsculo → Salão das Horas → Amanhecer</p></details>
-        <p class="start-help">ESPAÇO / ↑ / TOQUE: PULAR · ↓ / S: ABAIXAR · PULO DUPLO</p>
+        <p class="start-help">ESPAÇO / ↑ / TOQUE · PULO DUPLO DISPONÍVEL</p>
       </div>
-      <section id="shop-section" class="collection shop-section" aria-label="Lojinha de vinis"><div class="section-heading"><span>02 / LOJINHA DE VINIS</span><strong id="shop-balance">0 VINIS</strong></div><p>Cada disco coletado vira um vinil para gastar aqui. Seu saldo fica salvo neste navegador.</p><div class="shop-grid"><button id="shop-blue" type="button"></button><button id="shop-pink" type="button"></button><button id="shop-trail" type="button"></button><button id="shop-shield" type="button"></button></div><p id="shop-shields"></p></section>
-      <section class="collection" aria-label="Conquistas"><div class="section-heading"><span>03 / SEUS MOMENTOS</span><span id="achievement-count">0 / 6</span></div><div id="achievements" class="achievement-grid"></div><button id="replay-tutorial" class="text-button" type="button">REPETIR O TREINO GUIADO</button></section>
+      <section class="collection" aria-label="Conquistas"><div class="section-heading"><span>02 / SEUS MOMENTOS</span><span id="achievement-count">0 / 5</span></div><div id="achievements" class="achievement-grid"></div><button id="replay-tutorial" class="text-button" type="button">REPETIR O TREINO GUIADO</button></section>
     </div>
   </section>
   <div id="hud" hidden>
@@ -48,23 +45,17 @@
     <div class="hud-stat"><small>PONTOS</small><strong id="score">0</strong></div>
     <div class="hud-stat"><small>VINIS</small><strong id="vinyl-count">0</strong></div>
     <div class="hud-stat"><small>CHANCES</small><strong id="lives" aria-label="3 chances">♥ ♥ ♥</strong></div>
-    <div class="status-row"><strong id="run-status"></strong><span id="power-status"></span></div>
     <div class="mission-row" aria-label="Missões deste set"><span id="mission-0"></span><span id="mission-1"></span><span id="mission-2"></span></div>
     <div class="energy-row"><span id="drop-label">PRÓXIMO DROP</span><progress id="energy" max="100" value="0" aria-label="Energia para o drop"></progress><span id="combo">x0</span></div>
   </div>
-  <div id="hit-caption" role="status" aria-live="polite" hidden></div>
-  <div id="action-controls" hidden><button id="duck-button" type="button" aria-label="Abaixar">↓ ABAIXAR</button><button id="jump-button" type="button" aria-label="Pular">↑ PULAR</button></div>
   <div id="coach" role="status" aria-live="polite" hidden></div>
   <div id="toast" role="status" aria-live="polite" hidden></div>
-  <section id="result-screen" class="modal-screen" aria-label="Resultado do set" hidden><div class="result-card"><p class="eyebrow">LUKETA · FIM DO SET</p><h2 id="result-heading">Até os brabos erram o cue. Solta outra!</h2><p id="result-message"></p><p id="result-details"></p><div class="result-stats"><div><small>PONTOS</small><strong id="result-score">0</strong></div><div><small>VINIS</small><strong id="result-vinyls">0</strong></div><div><small>DROPS</small><strong id="result-drops">0</strong></div></div><p id="result-best" class="muted"></p><p id="result-wallet" class="muted"></p><button id="retry" class="primary" type="button">MAIS UM SET</button><button id="result-shop" class="secondary" type="button">IR À LOJINHA</button><button id="change-look" class="secondary" type="button">ESCOLHER PERSONAGEM</button></div></section>
+  <section id="result-screen" class="modal-screen" aria-label="Resultado do set" hidden><div class="result-card"><p class="eyebrow">LUKETA · FIM DO SET</p><h2 id="result-heading">Até os brabos erram o cue. Solta outra!</h2><p id="result-message"></p><p id="result-details"></p><div class="result-stats"><div><small>PONTOS</small><strong id="result-score">0</strong></div><div><small>VINIS</small><strong id="result-vinyls">0</strong></div><div><small>DROPS</small><strong id="result-drops">0</strong></div></div><p id="result-best" class="muted"></p><button id="retry" class="primary" type="button">MAIS UM SET</button><button id="change-look" class="secondary" type="button">ESCOLHER PERSONAGEM</button></div></section>
   <section id="pause-screen" class="modal-screen" aria-label="Set em pausa" hidden><div class="result-card"><p class="eyebrow">O SOM ESPERA POR VOCÊ</p><h2>Set em pausa.</h2><button id="resume" class="primary" type="button">CONTINUAR O SET</button><button id="end-set" class="secondary" type="button">ENCERRAR E VER MEU SET</button></div></section>
-  <section id="soundtrack-panel" class="modal-screen" aria-label="Escolher música" hidden><div class="result-card"><h2>Seu som no set.</h2><label for="spotify-url">Link do Spotify</label><input id="spotify-url" type="url" placeholder="https://open.spotify.com/track/…" autocomplete="off"><button id="spotify-load" class="primary" type="button">CARREGAR SPOTIFY</button><p id="spotify-status" role="status">Cole uma música, álbum ou playlist. A reprodução disponível depende do Spotify; o player pode oferecer prévia.</p><div id="spotify-embed"></div><a id="spotify-open-link" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer">Escolher música no Spotify ↗</a><button id="spotify-external" class="secondary" type="button">JÁ ESTOU OUVINDO NO SPOTIFY</button><button id="spotify-default" class="secondary" type="button">USAR TRILHA DO JOGO</button><label class="voice-option"><input id="voice-lines" type="checkbox" checked> Voz do personagem nas batidas</label><button id="soundtrack-close" class="secondary" type="button">VOLTAR AO JOGO</button></div></section>
-  <div class="utility"><button id="soundtrack-open" type="button">MÚSICA</button><button id="pause" type="button" hidden>PAUSAR</button><button id="sound" type="button" aria-label="Silenciar áudio" aria-pressed="false">SOM ON</button></div>
+  <div class="utility"><button id="pause" type="button" hidden>PAUSAR</button><button id="sound" type="button" aria-label="Silenciar áudio" aria-pressed="false">SOM ON</button></div>
   <audio id="music" loop preload="none"><source src="music.mp3" type="audio/mpeg"></audio>
-  <script src="character.js?v=20261028-powers2"></script>
-  <script src="stage-art.js?v=20261028-powers2"></script>
-  <script src="game.js?v=20261028-powers2"></script>
-  <script src="shop.js?v=20261028-powers2"></script>
-  <script src="soundtrack.js?v=20261028-powers2"></script>
+  <script src="character.js?v=20261028-run-profile"></script>
+  <script src="stage-art.js?v=20261028-run-profile"></script>
+  <script src="game.js?v=20261028-run-profile"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
-const sources=['character.js','stage-art.js','game.js','shop.js','soundtrack.js'].map(file=>readFileSync(new URL('../'+file,import.meta.url),'utf8'));
+const sources=['character.js','stage-art.js','game.js'].map(file=>readFileSync(new URL('../'+file,import.meta.url),'utf8'));
 function fixture({width=390,height=844,blockedStorage=false,cachedArt=false}={}) {
   const events={},elements=new Map(),storage=new Map([['beat-runner-character',JSON.stringify({hair:'pink',outfit:'white',view:'front'})]]);
   const gradient={addColorStop(){}};
@@ -14,8 +14,7 @@ function fixture({width=390,height=844,blockedStorage=false,cachedArt=false}={})
     return elements.get(id);
   }
   const document={hidden:false,getElementById:element,addEventListener:(type,fn)=>{events[type]=fn;}};
-  let rngSeed=123456;const fixtureMath=Object.create(Math);fixtureMath.random=()=>{rngSeed=(rngSeed*1664525+1013904223)>>>0;return rngSeed/4294967296;};
-  const scope=vm.createContext({console,Math:fixtureMath,URL,setTimeout,clearTimeout,performance:{now:()=>0},document,
+  const scope=vm.createContext({console,Math,performance:{now:()=>0},document,
     window:{innerWidth:width,innerHeight:height,matchMedia:()=>({matches:false}),addEventListener:(type,fn)=>{events[type]=fn;}},
     localStorage:{getItem:key=>{if(blockedStorage)throw Error('blocked');return storage.get(key)??null;},setItem:(key,value)=>{if(blockedStorage)throw Error('blocked');storage.set(key,value);}},
     OffscreenCanvas:cachedArt?class {constructor(w,h){this.width=w;this.height=h;}getContext(){return context;}}:undefined,
@@ -145,12 +144,12 @@ assert.ok(pacing.every(value=>value===pacing[0]));
 // Special pickups apply once, remain independent from vinyl energy, and reset on retry.
 {
   const f=fixture({cachedArt:true});f.events['play:click']();f.quiet();
-  for(const type of ['usb','chain','backstage','heart','energy','lean'])f.run(`drawBonus(ctx,{type:'${type}',x:200,y:200},.5);`);
-  assert.equal(f.run('bonusSprites.size'),6);
+  for(const type of ['usb','diamond','backstage','heart'])f.run(`drawBonus(ctx,{type:'${type}',x:200,y:200},.5);`);
+  assert.equal(f.run('bonusSprites.size'),4);
   f.run("bonuses=[{type:'usb',x:player.x,y:player.y,lift:55,r:18}];update();");
   assert.equal(f.run('score'),100);assert.equal(f.run('bonuses.length'),0);
   f.run('update();');assert.equal(f.run('score'),100);
-  f.run("collectBonus({type:'chain',x:0,y:0});");assert.equal(f.run('score'),250);
+  f.run("collectBonus({type:'diamond',x:0,y:0});");assert.equal(f.run('score'),250);
   assert.equal(f.run('world.vinyls'),0);assert.equal(f.run('world.energy'),0);
   f.run("collectBonus({type:'backstage',x:0,y:0});hitObstacle({x:0,y:0});");
   assert.equal(f.run('world.shield'),0);assert.equal(f.run('world.lives'),3);assert.equal(f.run('world.hits'),0);
@@ -158,8 +157,8 @@ assert.ok(pacing.every(value=>value===pacing[0]));
   f.run("collectBonus({type:'heart',x:0,y:0});collectBonus({type:'heart',x:0,y:0});");
   assert.equal(f.run('world.lives'),3,'hearts cannot exceed three lives');
   f.run("world.lives=2;world.bonusSerial=0;const kinds=[];for(let i=0;i<4;i++)kinds.push(spawnBonus().type);");
-  assert.ok(f.run("kinds.every(type=>['usb','chain','backstage','heart','energy','lean'].includes(type))"));
-  f.run('window.innerHeight=600;');f.events.resize();assert.equal(f.run('bonuses[0].y'),f.run('getFloor()-bonuses[0].lift'));
+  assert.equal(f.run('kinds.join()'),'usb,diamond,backstage,heart');
+  f.run('window.innerHeight=600;');f.events.resize();assert.equal(f.run('bonuses[0].y'),f.run('getFloor()-105'));
   f.run("collectBonus({type:'backstage',x:0,y:0});world.dropFrames=1;hitObstacle({x:0,y:0});");
   assert.equal(f.run('world.shield'),1,'drop does not spend the backstage protection');
   f.events['retry:click']();assert.equal(f.run('bonuses.length'),0);assert.equal(f.run('world.shield'),0);
@@ -236,7 +235,7 @@ assert.ok(pacing.every(value=>value===pacing[0]));
     assert.equal(f.run('drawnLook.running'),true);
   }
   assert.equal(f.run('world.drops'),1);
-  for(const type of ['usb','chain','backstage','heart']){
+  for(const type of ['usb','diamond','backstage','heart']){
     f.run(`collectBonus({type:'${type}',x:0,y:0});drawPlayer();`);
     assert.equal(f.run('drawnLook.pose'),'idle');assert.equal(f.run('drawnLook.view'),'profile');
   }
@@ -245,94 +244,4 @@ assert.ok(pacing.every(value=>value===pacing[0]));
   f.run('drawDJ=actualDrawer;');
 }
 
-
-// Powers expire in simulation time, replace each other and keep jump clearance at both speeds.
-for(const width of [390,1024])for(const kind of ['energy','lean']){
-  const f=fixture({width});f.events['play:click']();f.quiet();
-  const base=f.run('getRunSpeed()');f.run(`collectBonus({type:'${kind}',x:0,y:0});`);
-  assert.ok(kind==='energy'?f.run('getRunSpeed()')>base:f.run('getRunSpeed()')<base);
-  f.run("obstacles=[{x:player.x+100,y:getBeatY(48),w:48,h:48,type:'case'}];doJump();for(let i=0;i<230;i++){update();if(player.onGround)break;}");
-  assert.equal(f.run('world.hits'),0,'speed power preserves a clearable jump');
-  f.run('obstacles=[];world.distance=0;for(let i=0;i<240;i++)update();');assert.equal(f.run('world.speedFrames'),0);
-  f.run("collectBonus({type:'energy',x:0,y:0});collectBonus({type:'lean',x:0,y:0});");
-  assert.equal(f.run('world.speedKind'),'lean');assert.equal(f.run('world.speedFrames'),240);
-}
-{
-  const f=fixture();f.events['play:click']();f.quiet();
-  f.run("const gaps=new Set();for(let i=0;i<80;i++){const gap=obstacleGap();if(gap<390||gap>900)throw Error('unsafe gap');gaps.add(Math.floor(gap));}const lifts=new Set();for(let i=0;i<40;i++){spawnRecord();lifts.add(Math.floor(records[records.length-1].lift));}");
-  assert.ok(f.run('gaps.size')>20);assert.ok(f.run('lifts.size')>10);
-  f.run("records=[];const rig=spawnObstacle('rig');rig.x=player.x+520;updateAirObstacle(rig);const highY=rig.y;rig.x=player.x+200;updateAirObstacle(rig);");
-  assert.ok(f.run('rig.y>highY'));assert.equal(f.run('rig.y'),f.run('getFloor()-116'));
-  f.run('obstacles=[rig];rig.x=player.x+getRunSpeed();update();');assert.equal(f.run('world.lives'),2,'standing contact damages');
-  assert.ok(f.run('world.hitText').includes('Porra'));assert.equal(f.element('hit-caption').hidden,false);
-  f.events['retry:click']();f.quiet();
-  f.run("doDuck();obstacles=[{x:player.x+getRunSpeed(),y:getFloor()-116,w:74,h:38,type:'rig'}];update();");
-  assert.equal(f.run('world.lives'),3,'ducking clears overhead structure');assert.equal(f.run('playerBounds().h'),52);
-  f.run("player.duckFrames=0;player.duckHeld=false;obstacles=[{x:player.x+getRunSpeed(),y:getFloor()-116,w:74,h:38,type:'rig'}];update();");
-  assert.equal(f.run('world.lives'),2,'standing again restores full collision height');
-  f.run('world.dropFrames=100;hitObstacle({x:0,y:0});updateHud();');assert.ok(f.element('run-status').textContent.includes('DROP'));
-  assert.ok(f.run('world.hitText').includes('PROTEGIDO'));
-  f.run('world.dropFrames=0;world.invulnerable=0;world.shield=1;hitObstacle({x:0,y:0});');assert.equal(f.run('world.shield'),0);
-  f.run("world.invulnerable=0;collectBonus({type:'usb',x:0,y:0});records=[{x:player.x+100,y:player.y-10,lift:110,r:13}];const magnetStart=records[0].x;update();");
-  assert.ok(f.run('records[0].x')<f.run('magnetStart-getRunSpeed()'));
-  f.run('records=[];world.magnetFrames=0;world.energy=0;world.chainFrames=0;score=0;combo=0;collectRecord({x:0,y:0});const normalPoints=score;');
-  f.run('world.chainFrames=480;score=0;combo=0;collectRecord({x:0,y:0});');assert.equal(f.run('score'),f.run('normalPoints*2'));
-}
-{
-  const f=fixture();assert.equal(f.run('window.GameShop.balance'),0);
-  assert.equal(f.run("window.GameShop.buy('blue')"),false,'cannot spend unavailable vinyls');
-  f.events['play:click']();f.quiet();f.run('for(let i=0;i<40;i++)window.GameShop.earnVinyl();');
-  assert.equal(f.run("window.GameShop.buy('blue')"),false,'shop stays closed during run');
-  f.events['change-look:click']();assert.equal(f.run("window.GameShop.buy('blue')"),true);
-  assert.equal(f.run('window.GameShop.balance'),10);assert.equal(f.run('window.GameShop.aura()'),'#91dbff');
-  f.run("window.GameShop.buy('blue');");assert.equal(f.run('window.GameShop.balance'),10,'equipping owned cosmetics never charges again');
-  f.run('for(let i=0;i<15;i++)window.GameShop.earnVinyl();');assert.equal(f.run("window.GameShop.buy('shield')"),true);
-  assert.equal(f.run('window.GameShop.balance'),0);f.events['play:click']();assert.equal(f.run('world.shield'),1);
-  assert.equal(JSON.parse(f.storage.get('beat-runner-shop')).shields,0,'startup protection consumed once');
-  f.events['retry:click']();assert.equal(f.run('world.shield'),0);
-}
-{
-  const f=fixture(),id='4cOdK2wGLETKBW3PvgPWqT';
-  assert.equal(f.run(`parseSpotifyLink('https://open.spotify.com/track/${id}?si=test')`),'spotify:track:'+id);
-  assert.equal(f.run(`parseSpotifyLink('https://open.spotify.com/intl-pt/playlist/${id}')`),'spotify:playlist:'+id);
-  for(const bad of ['javascript:alert(1)','https://open.spotify.com.evil.test/track/'+id,'https://user:pass@open.spotify.com/track/'+id,'http://open.spotify.com/track/'+id,'https://open.spotify.com/track/nope'])assert.equal(f.run(`parseSpotifyLink(${JSON.stringify(bad)})`),null);
-  f.element('spotify-url').value='inválido';await f.run('window.GameMusic.load();');
-  assert.equal(f.run('window.GameMusic.isSpotify()'),false);
-  assert.ok(f.element('spotify-status').textContent.includes('Cole um link'));
-}
-
-
-// The official Spotify controller is mocked here: loading, replacement, pause and mute must stay in sync.
-{
-  const f=fixture(),id='4cOdK2wGLETKBW3PvgPWqT';
-  f.run(`var spotifyCalls={pause:0,resume:0,load:0};document.createElement=()=>({remove(){}});document.head={appendChild(){window.onSpotifyIframeApiReady({createController(node,options,callback){callback({addListener(name,fn){if(name==='playback_started')spotifyCalls.start=fn;},pause(){spotifyCalls.pause++;},resume(){spotifyCalls.resume++;},loadEntity(){spotifyCalls.load++;}});}});}};`);
-  f.element('spotify-url').value='https://open.spotify.com/track/'+id;
-  assert.equal(await f.run('window.GameMusic.load();'),true);assert.equal(f.run('window.GameMusic.isSpotify()'),true);
-  f.run('window.GameMusic.pause();window.GameMusic.setMuted(true);window.GameMusic.setMuted(false);');assert.equal(f.run('spotifyCalls.pause'),0,'unstarted embed never receives pause commands');
-  f.run('spotifyCalls.start();');f.events['play:click']();assert.equal(f.run('spotifyCalls.resume'),1);
-  f.events['pause:click']();assert.ok(f.run('spotifyCalls.pause')>0);
-  await f.run('window.GameMusic.load();');assert.equal(f.run('spotifyCalls.load'),1);
-  f.events['sound:click']();const before=f.run('spotifyCalls.resume');f.events['resume:click']();assert.equal(f.run('spotifyCalls.resume'),before,'muted game cannot restart Spotify');
-  f.events['spotify-external:click']();f.events['sound:click']();const externalCount=f.run('spotifyCalls.resume');f.run('startMusic();');assert.equal(f.run('spotifyCalls.resume'),externalCount,'external Spotify mode never starts an embedded preview');
-  f.events['spotify-default:click']();assert.equal(f.run('window.GameMusic.isSpotify()'),false);
-}
-
-
-// Aerial obstacles remain dodgeable on desktop/mobile, with every speed modifier.
-for(const width of [390,1280])for(const kind of [null,'energy','lean'])for(const duck of [false,true]){
-  const f=fixture({width});f.events['play:click']();f.quiet();
-  if(kind)f.run(`world.speedKind='${kind}';world.speedFrames=240;`);
-  f.run(`world.distance=30000;world.elapsed=30;player.duckHeld=${duck};spawnObstacle('rig');records=[];for(let i=0;i<230;i++)update();`);
-  assert.equal(f.run('world.hits'),duck?0:1,`aerial clearance width=${width} speed=${kind} duck=${duck}`);
-  f.run('world.hitText="teste";world.hitFrames=80;updateHud();');f.events['pause:click']();
-  assert.equal(f.element('hit-caption').hidden,true);f.events['end-set:click']();f.events['change-look:click']();
-  assert.equal(f.element('hit-caption').hidden,true);f.events['play:click']();assert.equal(f.run('player.duckHeld'),false);assert.equal(f.run('player.duckFrames'),0);
-}
-{
-  const f=fixture({cachedArt:true});f.run('var blits=[];ctx.drawImage=(surface,x,y)=>blits.push([x,y]);renderStageFrame(ctx,{w:390,h:844,floor:760,stage:STAGES[0],time:1,scroll:100,pulse:0,drop:false,reducedMotion:false});');
-  assert.ok(f.run('blits.some(([x])=>x<0)'),'scenery moves at its own depth');
-  f.run('blits=[];renderStageFrame(ctx,{w:390,h:844,floor:760,stage:STAGES[0],time:2,scroll:200,pulse:0,drop:false,reducedMotion:true});');
-  assert.ok(f.run('blits.every(([x])=>x===0)'),'reduced motion keeps scenery still');
-}
-
-console.log(`OK: ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; six pickups; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; ducking and falling rigs; random spacing; timed powers; shop; Spotify link validation; blocked storage.`);
+console.log(`OK: ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);
