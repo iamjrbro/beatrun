@@ -11,7 +11,7 @@ function readStored(key, fallback) { try { return JSON.parse(localStorage.getIte
 function saveStored(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
 const savedChoice = readStored('beat-runner-character', {});
 for (const key of Object.keys(choiceOptions)) {
-  if (key !== 'hair' && choiceOptions[key].includes(savedChoice?.[key])) characterChoice[key] = savedChoice[key];
+  if (key !== 'hair' && key !== 'view' && choiceOptions[key].includes(savedChoice?.[key])) characterChoice[key] = savedChoice[key];
 }
 function selectCharacter(key, value) {
   if (!choiceOptions[key]?.includes(value)) return;
@@ -195,7 +195,6 @@ function activateDrop() {
   if (STATE !== 'playing' || world.dropFrames > 0 || world.energy < 100) return;
   hudDirty = true;
   world.energy = 0; world.dropFrames = 480; world.drops++;reactCrowd();
-  player.pose = 'celebrate'; player.poseFrames = 24;
   floatText('SOLTA O TRAP!', '#fff0bc'); emitParticles(player.x,player.y,'#f4d68c',24);
   playTone(95,'sine',0.4,0.13); playTone(48,'sine',0.55,0.1); unlock('drop');
 }
@@ -205,7 +204,6 @@ function collectRecord(record) {
   score += world.dropFrames > 0 ? bonus * 2 : bonus;
   // Protected collecting earns extra points, never a self-sustaining shield.
   if (world.dropFrames === 0) world.energy = Math.min(100, world.energy + 12.5);
-  player.pose = 'celebrate'; player.poseFrames = 22;
   emitParticles(record.x, record.y, '#f4d68c', 8); floatText('+' + (world.dropFrames > 0 ? bonus * 2 : bonus) + (combo >= 4 ? ' · x' + combo : ''));
   playTone(440 + (combo % 5) * 65,'sine',0.08,0.055); unlock('record');
   if (world.energy >= 100 && world.dropFrames === 0) activateDrop();
@@ -361,7 +359,7 @@ function update() {
     hudDirty = true;
     world.stageIndex++; level = world.stageIndex+1; unlock(next.id);reactCrowd();
     world.announcement = next.announcement || (next.id === 'party' ? 'DA SALA PRA PISTA. A NOITE É SUA.' : 'LUKETA NO PALCO. PARA SEMPRE O DJ.');
-    world.announcementFrames = 240; player.pose = 'celebrate'; player.poseFrames = 65;
+    world.announcementFrames = 240;
     next=STAGES[world.stageIndex+1];
   }
   if (world.elapsed >= 90 && world.hits === 0) unlock('clean');
@@ -432,8 +430,7 @@ function drawPlayer(alpha = 0) {
   }
   if (world.invulnerable>0 && !reducedMotion) ctx.globalAlpha=.58+Math.sin(frame*.15)*.13;
   const pose = player.poseFrames>0?player.pose:'idle';
-  const bob = player.onGround && pose==='celebrate' && !reducedMotion ? Math.sin(frame*.32)*2 : 0;
-  ctx.translate(player.x,foot+bob); ctx.scale(1/player.squish,player.squish);
+  ctx.translate(player.x,foot); ctx.scale(1/player.squish,player.squish);
   drawDJ(ctx,{...characterChoice,view:characterChoice.view,x:0,y:-54,phase:player.runFrame+getStrideStep()*alpha,
     running:STATE==='playing'&&player.onGround,airborne:!player.onGround,pose});
   ctx.restore();

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 const sources=['character.js','stage-art.js','game.js'].map(file=>readFileSync(new URL('../'+file,import.meta.url),'utf8'));
 function fixture({width=390,height=844,blockedStorage=false,cachedArt=false}={}) {
-  const events={},elements=new Map(),storage=new Map([['beat-runner-character',JSON.stringify({hair:'pink',outfit:'white'})]]);
+  const events={},elements=new Map(),storage=new Map([['beat-runner-character',JSON.stringify({hair:'pink',outfit:'white',view:'front'})]]);
   const gradient={addColorStop(){}};
   const context=new Proxy({}, {get:(target,key)=>key in target?target[key]:key==='createLinearGradient'?()=>gradient:()=>{},set:(target,key,value)=>{target[key]=value;return true;}});
   function element(id) {
@@ -219,4 +219,29 @@ assert.ok(pacing.every(value=>value===pacing[0]));
     f.run('world.distance+=99999;update();');assert.equal(f.run('world.stageIndex'),11);
   }
 }
-console.log(`OK: ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; blocked storage.`);
+
+// Old saved front-facing choices must not replace the default side-on run.
+// Collecting, dropping and stage transitions keep the natural running pose.
+{
+  const f=fixture();
+  assert.equal(f.element('view-profile').attributes['aria-pressed'],'true');
+  f.run('const actualDrawer=drawDJ;var drawnLook;drawDJ=(ctx,look)=>{drawnLook=look;};drawMenuPortrait();');
+  assert.equal(f.run('drawnLook.view'),'front','selection portrait stays front-facing');
+  f.events['play:click']();f.quiet();
+  f.run('drawPlayer();');assert.equal(f.run('drawnLook.view'),'profile');
+  for(let i=0;i<8;i++){
+    f.run('collectRecord({x:0,y:0});drawPlayer();');
+    assert.equal(f.run('drawnLook.pose'),'idle','vinyls and automatic drop never raise the arm');
+    assert.equal(f.run('drawnLook.running'),true);
+  }
+  assert.equal(f.run('world.drops'),1);
+  for(const type of ['usb','diamond','backstage','heart']){
+    f.run(`collectBonus({type:'${type}',x:0,y:0});drawPlayer();`);
+    assert.equal(f.run('drawnLook.pose'),'idle');assert.equal(f.run('drawnLook.view'),'profile');
+  }
+  f.run('world.distance=STAGES[1].at;update();drawPlayer();');assert.equal(f.run('drawnLook.pose'),'idle');
+  f.events['pause:click']();f.events['resume:click']();f.run('drawPlayer();');assert.equal(f.run('drawnLook.view'),'profile');
+  f.run('drawDJ=actualDrawer;');
+}
+
+console.log(`OK: ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);
