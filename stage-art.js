@@ -74,7 +74,12 @@ function drawStageObstacle(ctx, obstacle, offsetX = 0) {
   ctx.save();
   // Warm warning stripe and a solid, grounded silhouette distinguish hazards.
   artBox(ctx, x, y, w, h, '#253044', 4);
-  if (type === 'speaker') {
+  if(type==='rig'){
+    ctx.strokeStyle='#e6bd77';ctx.lineWidth=2;ctx.strokeRect(x+3,y+3,w-6,h-6);
+    for(let i=0;i<3;i++){artCircle(ctx,x+15+i*22,y+h/2,7,'#101e2c');artCircle(ctx,x+15+i*22,y+h/2,3,'#dbaa6b');}
+    ctx.strokeStyle='#7d8795';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+8,y);ctx.lineTo(x+8,y-30);ctx.moveTo(x+w-8,y);ctx.lineTo(x+w-8,y-30);ctx.stroke();
+    ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.fillStyle='#f9d99b';ctx.fillText('↓ ABAIXE',x+w/2,y-36);
+  }else if (type === 'speaker') {
     artBox(ctx, x + 4, y + 4, w - 8, h - 8, '#121b2a', 2);
     artCircle(ctx, x + w / 2, y + h * 0.64, w * 0.29, '#44546b');
     artCircle(ctx, x + w / 2, y + h * 0.64, w * 0.17, '#192335');
@@ -126,7 +131,11 @@ function renderStageFrame(ctx, options) {
     backdropSurface=cached?{...cached,key}:null;
     if(cached) drawStageBackdrop(cached.paint,{...options,time:0,scroll:0,pulse:0,drop:false,reducedMotion:true});
   }
-  if(backdropSurface) ctx.drawImage(backdropSurface.surface,0,0);
+  if(backdropSurface){
+    const shift=reducedMotion?0:Math.max(0,scroll-stage.at)*.075%w;
+    ctx.save();ctx.beginPath();ctx.rect(0,0,w,floor);ctx.clip();ctx.drawImage(backdropSurface.surface,-shift,0);if(shift>0)ctx.drawImage(backdropSurface.surface,w-shift,0);ctx.restore();
+    ctx.save();ctx.beginPath();ctx.rect(0,floor,w,h-floor);ctx.clip();ctx.drawImage(backdropSurface.surface,0,0);ctx.restore();
+  }
   else drawStageBackdrop(ctx,{...options,time:0,scroll:0,pulse:0,drop:false,reducedMotion:true});
   ctx.save();
   const accent=drop?'#f6ce78':stage.accent;
@@ -156,18 +165,27 @@ function drawRecord(ctx, record, time, reducedMotion, offsetX = 0) {
   if(!reducedMotion)ctx.rotate(Math.sin(time*2+record.x*.01)*.12);
   ctx.drawImage(vinylSurface.surface,-size/2,-size/2);ctx.restore();
 }
-// Four small cached sprites keep rare pickups distinct without extra per-frame artwork.
+// Six small cached sprites keep rare pickups distinct without extra per-frame artwork.
 const bonusSprites=new Map();
 function paintBonus(ctx,type){
   ctx.save();ctx.translate(26,26);ctx.lineWidth=2;
-  const color={usb:'#f6d58b',diamond:'#b6e9ff',backstage:'#91dbff',heart:'#ffafc6'}[type];
+  const color={usb:'#f6d58b',chain:'#b6e9ff',backstage:'#91dbff',heart:'#ffafc6',energy:'#c3f48d',lean:'#c7a3e8'}[type];
   artCircle(ctx,0,0,23,'#132737');ctx.strokeStyle=color;ctx.fillStyle=color;
   if(type==='usb'){
     ctx.rotate(-.35);artBox(ctx,-9,-4,18,23,color,3);artBox(ctx,-6,-15,12,12,'#e6edf1',1);
     ctx.fillStyle='#354859';ctx.fillRect(-3,-12,2,5);ctx.fillRect(1,-12,2,5);ctx.fillRect(-5,5,10,2);
-  }else if(type==='diamond'){
-    ctx.beginPath();ctx.moveTo(-16,-6);ctx.lineTo(-9,-15);ctx.lineTo(9,-15);ctx.lineTo(16,-6);ctx.lineTo(0,17);ctx.closePath();ctx.fill();
-    ctx.strokeStyle='#43849e';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(-16,-6);ctx.lineTo(16,-6);ctx.moveTo(-9,-15);ctx.lineTo(-5,-6);ctx.lineTo(0,17);ctx.lineTo(5,-6);ctx.lineTo(9,-15);ctx.stroke();
+  }else if(type==='chain'){
+    ctx.strokeStyle='#dcebf2';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(0,-1,15,13,0,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='#7f9ba9';ctx.lineWidth=1;
+    for(let i=0;i<10;i++){const angle=i*Math.PI*2/10;ctx.beginPath();ctx.ellipse(Math.cos(angle)*15,Math.sin(angle)*13-1,3,2,angle,0,Math.PI*2);ctx.stroke();}
+    artBox(ctx,-7,9,14,9,'#eff7fa',2);ctx.fillStyle='#6c8b9d';ctx.font='bold 6px monospace';ctx.textAlign='center';ctx.fillText('L',0,16);
+  }else if(type==='energy'){
+    artBox(ctx,-10,-17,20,34,'#c3f48d',5);ctx.fillStyle='#506753';ctx.fillRect(-7,-14,14,3);ctx.fillRect(-7,12,14,2);
+    ctx.fillStyle='#284645';ctx.beginPath();ctx.moveTo(2,-10);ctx.lineTo(-5,2);ctx.lineTo(1,2);ctx.lineTo(-2,10);ctx.lineTo(7,-2);ctx.lineTo(1,-2);ctx.closePath();ctx.fill();
+  }else if(type==='lean'){
+    ctx.fillStyle='#c7a3e8';ctx.beginPath();ctx.moveTo(-13,-11);ctx.lineTo(13,-11);ctx.lineTo(9,18);ctx.lineTo(-9,18);ctx.closePath();ctx.fill();
+    artBox(ctx,-14,-15,28,5,'#ede1f5',2);ctx.strokeStyle='#e7d6f4';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(5,-14);ctx.lineTo(8,-24);ctx.stroke();
+    ctx.fillStyle='#64437a';ctx.font='bold 7px monospace';ctx.textAlign='center';ctx.fillText('SLOW',0,6);
   }else if(type==='backstage'){
     ctx.rotate(-.35);ctx.beginPath();ctx.ellipse(0,0,17,11,0,0,Math.PI*2);ctx.stroke();
     artBox(ctx,-11,-6,22,12,color,3);ctx.fillStyle='#12344b';ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.fillText('VIP',0,3);
