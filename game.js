@@ -25,7 +25,7 @@ for (const [key, values] of Object.entries(choiceOptions)) {
 }
 const STAGES = [
   {id:'studio',name:'ESTÚDIO',next:'PRIMEIRA PISTA',at:0,accent:'#81f7d4',sky:'#080f1b',grid:'#25413755',bpm:88,volume:0.24},
-  {id:'ap213',name:'APARTAMENTO DO SPIKE · 213',scene:'apartment',at:2100,accent:'#e3bc8d',sky:'#251e2c',grid:'#70585055',bpm:92,volume:.26,announcement:'APÊ 213. POUCO ESPAÇO, MUITO SONHO.'},
+  {id:'ap213',name:'213',scene:'apartment',at:2100,accent:'#e3bc8d',sky:'#251e2c',grid:'#70585055',bpm:92,volume:.26,announcement:'APÊ 213. POUCO ESPAÇO, MUITO SONHO.'},
   {id:'party',name:'PRIMEIRA PISTA',next:'FESTIVAL',at:4200,accent:'#79d2ef',sky:'#0c1228',grid:'#2b527155',bpm:108,volume:0.33},
   {id:'festival',name:'FESTIVAL',at:10500,accent:'#c7a7f4',sky:'#160f2a',grid:'#57457055',bpm:126,volume:0.42},
   {id:'cena2k',name:'CENA2K FESTIVAL',scene:'cena',at:16500,accent:'#ec92d1',sky:'#18142b',grid:'#734c7855',bpm:128,volume:.42,announcement:'DO APÊ 213 PRA CENA. SOLTA O TRAP!'},
