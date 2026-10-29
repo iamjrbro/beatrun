@@ -21,7 +21,7 @@ function fixture({width=390,height=844,blockedStorage=false,cachedArt=false}={})
     CanvasRenderingContext2D:function(){},requestAnimationFrame(){}});
   for(const source of sources) vm.runInContext(source,scope);
   const run=code=>vm.runInContext(code,scope);
-  const quiet=()=>run("world.tutorial=false;world.nextObstacle=Infinity;world.nextRecord=Infinity;world.nextBonus=Infinity;");
+  const quiet=()=>run("world.tutorial=false;world.nextObstacle=Infinity;world.nextRecord=Infinity;world.nextBonus=Infinity;world.nextDrink=Infinity;");
   return {run,events,element,storage,document,quiet};
 }
 {
@@ -244,4 +244,47 @@ assert.ok(pacing.every(value=>value===pacing[0]));
   f.run('drawDJ=actualDrawer;');
 }
 
-console.log(`OK: ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);
+
+// Drinks expire, replace each other without stacking and freeze while paused.
+{
+  const f=fixture({cachedArt:true});f.events['play:click']();f.quiet();
+  for(const type of ['lean','energy'])f.run(`drawBonus(ctx,{type:'${type}',x:200,y:200});`);
+  assert.equal(f.run('bonusSprites.size'),2);
+  f.run("bonuses=[{type:'lean',x:player.x,y:player.y,r:18}];update();");
+  assert.equal(f.run('bonuses.length'),0);assert.equal(f.run('world.speedFrames'),300);
+  f.run('for(let i=0;i<60;i++)update();');assert.ok(f.run('getRunSpeed()<3.2'));
+  f.events['pause:click']();const remaining=f.run('world.speedFrames');f.run('update();');
+  assert.equal(f.run('world.speedFrames'),remaining);f.events['resume:click']();
+  f.run("collectBonus({type:'energy',x:0,y:0});for(let i=0;i<60;i++)update();");
+  assert.equal(f.run('world.speedEffect'),'energy');assert.ok(f.run('world.speedFactor>1.27'));
+  f.run('for(let i=0;i<360;i++)update();');assert.equal(f.run('world.speedFrames'),0);
+  assert.equal(f.run('world.speedEffect'),'');assert.equal(f.run('world.speedFactor'),1);
+  f.events['retry:click']();assert.equal(f.run('world.speedFactor'),1);
+}
+// Preserve jump clearance at both drink speed limits, including the fastest stage.
+for(const factor of [.72,1.28])for(const distance of [0,30000])for(const gap of [60,100,150]){
+  const f=fixture();f.events['play:click']();f.quiet();
+  f.run(`world.speedFactor=${factor};world.speedEffect='${factor<1?'lean':'energy'}';world.speedFrames=1000;
+    world.distance=${distance};obstacles=[{x:player.x+${gap},y:getBeatY(48),w:42,h:48,type:'speaker'}];
+    doJump();for(let i=0;i<220;i++){update();if(player.onGround)break;}`);
+  assert.equal(f.run('world.hits'),0,`drink jump factor=${factor} distance=${distance} gap=${gap}`);
+}
+// Random spacing stays bounded and scenery moves without re-rasterizing every frame.
+{
+  const f=fixture({cachedArt:true});f.events['play:click']();f.quiet();
+  f.run(`const gaps=[],heights=[];for(let i=0;i<25;i++){
+    obstacles=[];records=[];world.nextObstacle=world.distance;world.nextRecord=world.distance;
+    update();gaps.push(world.nextObstacle-world.distance);heights.push(records.at(-1).lift);
+  }`);
+  assert.ok(f.run('gaps.every(g=>g>=390&&g<=950)'));
+  assert.ok(f.run('new Set(gaps.map(Math.floor)).size>3'));
+  assert.ok(f.run('new Set(heights).size>1'));
+  f.run(`const blits=[];ctx.drawImage=(...args)=>blits.push(args);
+    renderStageFrame(ctx,{w:390,h:844,floor:760,stage:STAGES[0],time:1,scroll:400,pulse:0,drop:false,reducedMotion:false});`);
+  assert.ok(f.run('blits.some(args=>args[1]===-30)'),'background scrolls behind the runner');
+  f.run("world.dropFrames=0;world.shield=0;world.invulnerable=0;hitObstacle({x:0,y:0});updateHud();");
+  assert.equal(f.run('world.lives'),2);assert.ok(f.run('world.impactFrames>0'));
+  assert.ok(f.element('drop-label').textContent.includes('RECUPERAÇÃO'));
+}
+
+console.log(`OK: drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);

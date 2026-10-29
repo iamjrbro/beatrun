@@ -126,7 +126,16 @@ function renderStageFrame(ctx, options) {
     backdropSurface=cached?{...cached,key}:null;
     if(cached) drawStageBackdrop(cached.paint,{...options,time:0,scroll:0,pulse:0,drop:false,reducedMotion:true});
   }
-  if(backdropSurface) ctx.drawImage(backdropSurface.surface,0,0);
+  if(backdropSurface){
+    // Reuse the rasterized scenery; only the background scrolls, the floor stays grounded.
+    const shift=reducedMotion?0:Math.max(0,scroll-stage.at)*.075%w;
+    ctx.save();ctx.beginPath();ctx.rect(0,0,w,floor);ctx.clip();
+    ctx.drawImage(backdropSurface.surface,-shift,0);
+    if(shift>0)ctx.drawImage(backdropSurface.surface,w-shift,0);
+    ctx.restore();
+    ctx.save();ctx.beginPath();ctx.rect(0,floor,w,h-floor);ctx.clip();
+    ctx.drawImage(backdropSurface.surface,0,0);ctx.restore();
+  }
   else drawStageBackdrop(ctx,{...options,time:0,scroll:0,pulse:0,drop:false,reducedMotion:true});
   ctx.save();
   const accent=drop?'#f6ce78':stage.accent;
@@ -156,11 +165,11 @@ function drawRecord(ctx, record, time, reducedMotion, offsetX = 0) {
   if(!reducedMotion)ctx.rotate(Math.sin(time*2+record.x*.01)*.12);
   ctx.drawImage(vinylSurface.surface,-size/2,-size/2);ctx.restore();
 }
-// Four small cached sprites keep rare pickups distinct without extra per-frame artwork.
+// Six small cached sprites keep rare pickups distinct without extra per-frame artwork.
 const bonusSprites=new Map();
 function paintBonus(ctx,type){
   ctx.save();ctx.translate(26,26);ctx.lineWidth=2;
-  const color={usb:'#f6d58b',diamond:'#b6e9ff',backstage:'#91dbff',heart:'#ffafc6'}[type];
+  const color={usb:'#f6d58b',diamond:'#b6e9ff',backstage:'#91dbff',heart:'#ffafc6',lean:'#c7a3e8',energy:'#91caff'}[type];
   artCircle(ctx,0,0,23,'#132737');ctx.strokeStyle=color;ctx.fillStyle=color;
   if(type==='usb'){
     ctx.rotate(-.35);artBox(ctx,-9,-4,18,23,color,3);artBox(ctx,-6,-15,12,12,'#e6edf1',1);
@@ -171,6 +180,16 @@ function paintBonus(ctx,type){
   }else if(type==='backstage'){
     ctx.rotate(-.35);ctx.beginPath();ctx.ellipse(0,0,17,11,0,0,Math.PI*2);ctx.stroke();
     artBox(ctx,-11,-6,22,12,color,3);ctx.fillStyle='#12344b';ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.fillText('VIP',0,3);
+  }else if(type==='lean'){
+    ctx.fillStyle='#c7a3e8';ctx.beginPath();ctx.moveTo(-13,-11);ctx.lineTo(13,-11);ctx.lineTo(9,18);ctx.lineTo(-9,18);ctx.closePath();ctx.fill();
+    artBox(ctx,-14,-15,28,5,'#ede1f5',2);ctx.strokeStyle='#e7d6f4';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(5,-14);ctx.lineTo(8,-24);ctx.stroke();
+    ctx.fillStyle='#64437a';ctx.font='bold 7px monospace';ctx.textAlign='center';ctx.fillText('SLOW',0,6);
+  }else if(type==='energy'){
+    artBox(ctx,-10,-20,20,40,'#c6d5e6',4);artBox(ctx,-10,-17,10,34,'#2054ac',1);
+    artBox(ctx,0,-17,10,34,'#d3dfed',1);artBox(ctx,-9,-21,18,4,'#eff4fc',2);
+    artCircle(ctx,0,-3,5,'#edc551');ctx.fillStyle='#c73942';ctx.fillRect(-6,-4,12,3);
+    ctx.fillStyle='#143b81';ctx.font='bold 6px monospace';ctx.textAlign='center';ctx.fillText('Red',0,9);ctx.fillText('Bull',0,15);
   }else{
     ctx.beginPath();ctx.moveTo(0,15);ctx.bezierCurveTo(-29,-3,-12,-26,0,-11);ctx.bezierCurveTo(12,-26,29,-3,0,15);ctx.fill();
   }

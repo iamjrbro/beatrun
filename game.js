@@ -74,15 +74,16 @@ let world = freshWorld();
 const player = {x:0,y:0,vy:0,w:54,h:110,jumpCount:0,maxJumps:2,onGround:true,squish:1,squishV:0,runFrame:0,poseFrames:0,pose:'idle'};
 const GRAVITY = 0.65, JUMP_FORCE = -13.5, FIXED_STEP = 1000 / 60;
 function freshWorld() {
-  return {mode:playMode,missions:chooseMissions(),perfect:0,clean:0,usb:0,diamonds:0,hearts:0,backstage:0,crowdFrames:0,shield:0,bonusSerial:0,nextBonus:1500,lives:3,vinyls:0,energy:0,dropFrames:0,invulnerable:0,distance:0,elapsed:0,stageIndex:0,
+  return {mode:playMode,missions:chooseMissions(),perfect:0,clean:0,usb:0,diamonds:0,hearts:0,backstage:0,crowdFrames:0,shield:0,bonusSerial:0,nextBonus:1500,nextDrink:900,speedEffect:'',speedFrames:0,speedFactor:1,impactFrames:0,lives:3,vinyls:0,energy:0,dropFrames:0,invulnerable:0,distance:0,elapsed:0,stageIndex:0,
     hits:0,drops:0,jumps:0,doubleJumps:0,dodged:0,beatClock:0,pulse:0,nextObstacle:420,nextRecord:100,
     tutorial:forceTutorial || !readStored('beat-runner-training-v2', false),announcement:'',announcementFrames:0};
 }
 function getGround() { return canvas.height - 145; }
 function getFloor() { return getGround() + player.h / 2 + 6; }
 function getBeatY(height) { return getFloor() - height; }
-function getRunSpeed() { return Math.min(7.2, 4.2 + world.distance / 7000); }
-function getStrideStep() { return Math.min(1.34, 0.92 + (getRunSpeed()-4.2)*0.14); }
+function getRunSpeed() { return Math.min(7.2, 4.2 + world.distance / 7000) * world.speedFactor; }
+function getStrideStep() { return Math.min(1.65, Math.max(.6, 0.92 + (getRunSpeed()-4.2)*0.14)); }
+function randomBetween(min,max) { return min + Math.random()*(max-min); }
 function getStage() { return STAGES[world.stageIndex]; }
 function setText(id, text) { if (el(id).textContent !== String(text)) el(id).textContent = String(text); }
 function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
@@ -213,14 +214,16 @@ function hitObstacle(obstacle) {
   if (world.dropFrames > 0) {
     score += 5; emitParticles(obstacle.x, obstacle.y, '#f1d491', 12); floatText('NO DROP!', '#f3df9e'); return;
   }
-  if (world.invulnerable > 0) return;
+  if (world.invulnerable > 0) { floatText('RECUPERAÇÃO', '#91dbff'); return; }
   if (world.shield > 0) {
     world.shield=0;world.invulnerable=60;
     emitParticles(player.x,player.y,'#91dbff',12);floatText('BACKSTAGE SALVOU!', '#91dbff');
     world.announcement='PULSEIRA USADA. O SET CONTINUA!';world.announcementFrames=120;
     return;
   }
-  world.hits++;world.clean=0;combo=0;
+  world.hits++;world.clean=0;combo=0;world.impactFrames=24;
+  player.pose='hurt';player.poseFrames=40;player.squish=.84;
+  floatText(world.mode==='chill'?'BATEU! MODO DE BOA':'BATEU! −1 CHANCE','#ffafc6');
   if(world.mode==='chill'){
     world.invulnerable=90;world.announcement='TÁ DE BOA. SEGUE O SOM!';world.announcementFrames=130;
     emitParticles(player.x,player.y,'#91dbff',6);return;
@@ -239,13 +242,16 @@ function spawnObstacle(type) {
   const obstacle = {id:++obstacleSerial,x:canvas.width+64,y:getBeatY(h),w,h,type,passed:false};
   obstacles.push(obstacle);
   // A visible rising vinyl trail hints at where to jump without disguising hazards.
-  for (const [offset,lift] of [[-135,55],[-70,150],[0,205],[70,150]]) {
+  const spread=randomBetween(62,90), top=randomBetween(180,205);
+  const trail=[[-spread*2,55],[-spread,randomBetween(130,150)],[0,top],[spread,randomBetween(130,150)]];
+  for (const [offset,lift] of trail) {
+    if(Math.random()<.18)continue;
     records.push({x:obstacle.x+offset,y:getFloor()-lift,lift,r:13});
   }
   return obstacle;
 }
 function spawnRecord() {
-  const lift = Math.floor(world.nextRecord / 410) % 3 === 0 ? 55 : 150;
+  const lift = [55,115,150][Math.floor(Math.random()*3)];
   records.push({x:canvas.width+35,y:getFloor()-lift,lift,r:13});
 }
 // Rare pickups are separate from vinyls: they never charge the drop.
@@ -266,6 +272,10 @@ function collectBonus(item) {
   else if(item.type==='backstage'){world.backstage++;
     if(world.shield){score+=50;label='BACKSTAGE +50';}
     else {world.shield=1;label='BACKSTAGE: 1 PROTEÇÃO';}color='#91dbff';
+  } else if(item.type==='lean'||item.type==='energy'){
+    world.speedEffect=item.type;world.speedFrames=300;
+    color=item.type==='lean'?'#c7a3e8':'#91caff';
+    label=item.type==='lean'?'LEAN: MAIS DEVAGAR · 5s':'RED BULL: MAIS RÁPIDO · 5s';
   } else if(item.type==='heart'){
     color='#ffafc6';world.hearts++;
     if(world.mode!=='chill'&&world.lives<3){world.lives++;label='UM SALVE DO SEU AMOR: +1 CHANCE';}
@@ -325,6 +335,9 @@ function updateCoach() {
   let hint = '';
   if (world.dropFrames > 0) hint = `SOLTA O TRAP · ${Math.ceil(world.dropFrames/60)}s DE PROTEÇÃO`;
   else if (world.announcementFrames > 0) hint = world.announcement;
+  else if(world.invulnerable>0)hint=`RECUPERAÇÃO · ${Math.ceil(world.invulnerable/60)}s SEM PERDER CHANCES`;
+  else if(world.shield>0)hint='PULSEIRA BACKSTAGE · PROTEGE A PRÓXIMA BATIDA';
+  else if(world.mode==='chill'&&!world.tutorial)hint='MODO DE BOA · BATIDAS NÃO TIRAM VIDAS';
   else if (world.tutorial) {
     if (world.vinyls === 0) hint = '01 / PEGUE OS VINIS DOURADOS. ELES SÃO PARA COLETAR.';
     else if (world.jumps === 0) hint = '02 / ESPAÇO, ↑ OU TOQUE PARA PULAR.';
@@ -342,7 +355,7 @@ function updateHud() {
   setText('stage-progress',next ? `${Math.floor(Math.min(100, (world.distance-getStage().at)/(next.at-getStage().at)*100))}% → ${next.name}` : 'LUKETA · O PALCO É SEU');
   const energyValue = world.dropFrames > 0 ? world.dropFrames/480*100 : world.energy;
   if (el('energy').value !== energyValue) el('energy').value = energyValue;
-  setText('drop-label',world.dropFrames > 0 ? 'DROP ATIVO' : world.shield ? 'BACKSTAGE ATIVO' : 'PRÓXIMO DROP');
+  setText('drop-label',world.speedFrames>0 ? `${world.speedEffect==='lean'?'LEAN · LENTO':'RED BULL · TURBO'} ${Math.ceil(world.speedFrames/60)}s` : world.dropFrames > 0 ? 'DROP · PROTEGIDO' : world.invulnerable>0 ? 'RECUPERAÇÃO · PROTEGIDO' : world.shield ? 'BACKSTAGE · PROTEGIDO' : world.mode==='chill' ? 'DE BOA · SEM DANO' : 'PRÓXIMO DROP');
   renderMissions();
   hudDirty = false;
 }
@@ -350,6 +363,11 @@ function update() {
   if (STATE !== 'playing') return;
   frame++; world.elapsed += 1/60;
   if(world.crowdFrames>0)world.crowdFrames--;
+  if(world.speedFrames>0){world.speedFrames--;if(world.speedFrames===0){world.speedEffect='';hudDirty=true;}}
+  const target=world.speedFrames>0?(world.speedEffect==='lean'?.72:1.28):1;
+  world.speedFactor+=(target-world.speedFactor)*.08;
+  if(Math.abs(target-world.speedFactor)<.0001)world.speedFactor=target;
+  if(world.impactFrames>0)world.impactFrames--;
   const speed = getRunSpeed(), jumpStep = speed/6;
   world.distance += speed; player.runFrame += getStrideStep();
   world.pulse *= 0.9; world.beatClock += 1/60;
@@ -375,11 +393,15 @@ function update() {
   player.squishV = (player.squishV+(1-player.squish)*0.28)*0.62; player.squish += player.squishV;
   const trainingGate = world.tutorial && (world.elapsed < 8 || (world.jumps === 0 && world.elapsed < 18));
   if (world.distance >= world.nextObstacle && !trainingGate) {
-    spawnObstacle(); world.nextObstacle = world.distance + Math.max(350, 640-world.distance/75);
+    spawnObstacle(); world.nextObstacle = world.distance + randomBetween(Math.max(390,620-world.distance/120),Math.max(700,950-world.distance/150));
   }
-  if (world.distance >= world.nextRecord) { spawnRecord(); world.nextRecord = world.distance+410; }
+  if (world.distance >= world.nextRecord) { spawnRecord(); world.nextRecord = world.distance+randomBetween(230,580); }
   if(world.distance>=world.nextBonus && !trainingGate) {
     spawnBonus();world.nextBonus=world.distance+2100;
+  }
+  if(world.distance>=world.nextDrink&&!trainingGate){
+    spawnBonus(Math.random()<.5?'lean':'energy');
+    world.nextDrink=world.distance+randomBetween(1500,2600);
   }
   const bounds = playerBounds();
   for(let i=bonuses.length-1;i>=0;i--){
@@ -423,6 +445,11 @@ function drawPlayer(alpha = 0) {
   ctx.save();
   const renderY = player.onGround ? player.y : Math.min(getGround(),player.y+player.vy*(getRunSpeed()/6)*alpha);
   const foot = renderY+player.h/2+6;
+  if(world.impactFrames>0){
+    ctx.fillStyle='#ffafc6';ctx.font='bold 12px monospace';ctx.textAlign='center';
+    ctx.fillText('BATEU!',player.x,renderY-90);
+    if(!reducedMotion)ctx.translate(Math.sin(world.impactFrames*1.8)*world.impactFrames*.22,0);
+  }
   artCircle(ctx,player.x,getFloor()+2,21,'#81f7d40c');
   if (world.dropFrames>0 || world.shield>0) {
     ctx.strokeStyle=world.dropFrames>0?'#e8ce86':'#91dbff'; ctx.lineWidth=1.8; ctx.globalAlpha=.65;
