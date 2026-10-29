@@ -242,17 +242,24 @@ function spawnObstacle(type) {
   const obstacle = {id:++obstacleSerial,x:canvas.width+64,y:getBeatY(h),w,h,type,passed:false};
   obstacles.push(obstacle);
   // A visible rising vinyl trail hints at where to jump without disguising hazards.
-  const spread=randomBetween(62,90), top=randomBetween(180,205);
-  const trail=[[-spread*2,55],[-spread,randomBetween(130,150)],[0,top],[spread,randomBetween(130,150)]];
+  const top=randomBetween(175,205);
+  const trail=[[-randomBetween(150,205),55],[-randomBetween(60,115),randomBetween(125,155)],[randomBetween(-15,20),top],[randomBetween(70,130),randomBetween(115,150)]];
   for (const [offset,lift] of trail) {
-    if(Math.random()<.18)continue;
+    if(Math.random()<.3)continue;
     records.push({x:obstacle.x+offset,y:getFloor()-lift,lift,r:13});
   }
   return obstacle;
 }
 function spawnRecord() {
-  const lift = [55,115,150][Math.floor(Math.random()*3)];
-  records.push({x:canvas.width+35,y:getFloor()-lift,lift,r:13});
+  const count=world.tutorial?1:1+Math.floor(Math.random()*4);
+  const base=[55,110,150][Math.floor(Math.random()*3)];
+  let span=0;
+  for(let i=0;i<count;i++){
+    const lift=i===0?base:Math.max(55,Math.min(170,base+randomBetween(-30,30)));
+    records.push({x:canvas.width+35+span,y:getFloor()-lift,lift,r:13});
+    if(i<count-1)span+=randomBetween(50,125);
+  }
+  return span;
 }
 // Rare pickups are separate from vinyls: they never charge the drop.
 function spawnBonus(type) {
@@ -395,7 +402,7 @@ function update() {
   if (world.distance >= world.nextObstacle && !trainingGate) {
     spawnObstacle(); world.nextObstacle = world.distance + randomBetween(Math.max(390,620-world.distance/120),Math.max(700,950-world.distance/150));
   }
-  if (world.distance >= world.nextRecord) { spawnRecord(); world.nextRecord = world.distance+randomBetween(230,580); }
+  if (world.distance >= world.nextRecord) { const span=spawnRecord(); world.nextRecord = world.distance+span+randomBetween(180,680); }
   if(world.distance>=world.nextBonus && !trainingGate) {
     spawnBonus();world.nextBonus=world.distance+2100;
   }

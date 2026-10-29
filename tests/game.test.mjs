@@ -269,6 +269,17 @@ for(const factor of [.72,1.28])for(const distance of [0,30000])for(const gap of 
     doJump();for(let i=0;i<220;i++){update();if(player.onGround)break;}`);
   assert.equal(f.run('world.hits'),0,`drink jump factor=${factor} distance=${distance} gap=${gap}`);
 }
+// Vinyl clusters vary independently in count, internal spacing, height and empty stretches.
+{
+  const f=fixture();f.events['play:click']();f.quiet();
+  f.run(`const counts=new Set(),spans=new Set(),inner=new Set();
+    for(let i=0;i<60;i++){
+      records=[];const span=spawnRecord();counts.add(records.length);spans.add(Math.floor(span));
+      for(let j=1;j<records.length;j++)inner.add(Math.floor(records[j].x-records[j-1].x));
+      if(records.some(r=>r.lift<55||r.lift>170))throw Error('unreachable vinyl');
+    }`);
+  assert.ok(f.run('counts.size>=3'));assert.ok(f.run('spans.size>10'));assert.ok(f.run('inner.size>10'));
+}
 // Random spacing stays bounded and scenery moves without re-rasterizing every frame.
 {
   const f=fixture({cachedArt:true});f.events['play:click']();f.quiet();
