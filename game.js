@@ -5,7 +5,7 @@ const uiNodes = new Map();
 const el = id => { if (!uiNodes.has(id)) uiNodes.set(id,document.getElementById(id)); return uiNodes.get(id); };
 const music = el('music');
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
-const choiceOptions = {outfit:['black','white','neon','orange'],hair:['blond','pink'],pants:['sparkle','plain','camo'],shoes:['sneakers','boots','nike'],view:['front','profile']};
+const choiceOptions = {outfit:['black','white','neon','orange'],hair:['blond','pink','turquoise','green'],pants:['sparkle','plain','camo'],shoes:['sneakers','boots','nike'],view:['front','profile']};
 const characterChoice = {outfit:'black',hair:'blond',pants:'sparkle',shoes:'sneakers',view:'profile'};
 function readStored(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
 function saveStored(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }

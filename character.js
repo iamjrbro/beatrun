@@ -7,9 +7,13 @@ function characterColors(outfit, hair) {
     orange: ['#ff7625', '#b54512', '#e85d17'],
   };
   const [shirt, seam, hood] = shirts[outfit] || shirts.black;
-  const [hairBase, hairLight, hairHighlight, hairShadow] = hair === 'pink'
-    ? ['#c66e96', '#f19fc8', '#ffd1e8', '#ae557f']
-    : ['#c2ae7e', '#e3cf9b', '#f2e1b7', '#b59c6b'];
+  const hairPalette = {
+    blond: ['#c2ae7e', '#e3cf9b', '#f2e1b7', '#b59c6b'],
+    pink: ['#c66e96', '#f19fc8', '#ffd1e8', '#ae557f'],
+    turquoise: ['#239d9f', '#54d9cf', '#b2fff0', '#177578'],
+    green: ['#419a46', '#7cdb63', '#c5f7a2', '#2b7037'],
+  };
+  const [hairBase, hairLight, hairHighlight, hairShadow] = hairPalette[hair] || hairPalette.blond;
   return { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow };
 }
 
