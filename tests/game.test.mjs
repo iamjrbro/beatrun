@@ -325,12 +325,12 @@ for(const factor of [.72,1.28])for(const distance of [0,30000])for(const gap of 
   const f=fixture();
   f.events['necklace-none:click']();assert.equal(f.run('characterChoice.chain'),false);
   f.events['necklace-cross:click']();assert.equal(f.run('characterChoice.chain'),true);
-  f.events['earringStyle-cross:click']();f.events['braceletStyle-duo:click']();f.events['jewelry-grillz:click']();
+  f.events['earringStyle-hoopcross:click']();f.events['braceletStyle-duo:click']();f.events['jewelry-grillz:click']();
   const saved=JSON.parse(f.storage.get('beat-runner-character'));
-  assert.equal(saved.necklace,'cross');assert.equal(saved.earringStyle,'cross');assert.equal(saved.braceletStyle,'duo');assert.equal(saved.grillz,true);
+  assert.equal(saved.necklace,'cross');assert.equal(saved.earringStyle,'hoopcross');assert.equal(saved.braceletStyle,'duo');assert.equal(saved.grillz,true);
   for(const outfit of ['vetements','racer','blueflame','crown','vethood'])for(const view of ['front','profile'])
     for(const necklace of ['none','luketa','cuban','cubanGold','cross','face'])for(const braceletStyle of ['none','cuban','tennis','duo']){
-      f.run(`drawDJ(ctx,{x:100,y:100,outfit:'${outfit}',view:'${view}',necklace:'${necklace}',braceletStyle:'${braceletStyle}',earringStyle:'cross',grillz:true,running:true,phase:4});`);
+      f.run(`drawDJ(ctx,{x:100,y:100,outfit:'${outfit}',view:'${view}',necklace:'${necklace}',braceletStyle:'${braceletStyle}',earringStyle:'hoopcross',grillz:true,running:true,phase:4});`);
     }
 }
 

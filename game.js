@@ -5,7 +5,7 @@ const uiNodes = new Map();
 const el = id => { if (!uiNodes.has(id)) uiNodes.set(id,document.getElementById(id)); return uiNodes.get(id); };
 const music = el('music');
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
-const choiceOptions = {outfit:['black','white','neon','orange','jeweled','vetements','racer','blueflame','crown','vethood'],hair:['blond','pink','turquoise','green'],pants:['sparkle','plain','camo','light'],shoes:['sneakers','boots','nike'],view:['front','profile'],necklace:['none','luketa','cuban','cubanGold','cross','face'],earringStyle:['stud','cross','hoopcross'],braceletStyle:['none','cuban','tennis','duo'],grillzStyle:['iced','gold']};
+const choiceOptions = {outfit:['black','white','neon','orange','jeweled','vetements','racer','blueflame','crown','vethood'],hair:['blond','pink','turquoise','green'],pants:['sparkle','plain','camo','light'],shoes:['sneakers','boots','nike'],view:['front','profile'],necklace:['none','luketa','cuban','cubanGold','cross','face'],earringStyle:['stud','hoopcross'],braceletStyle:['none','cuban','tennis','duo'],grillzStyle:['iced','gold']};
 const characterChoice = {outfit:'black',hair:'blond',pants:'sparkle',shoes:'sneakers',view:'profile',chain:true,earrings:true,pantsAccessory:true,necklace:'luketa',earringStyle:'stud',braceletStyle:'cuban',grillz:false,grillzStyle:'iced'};
 function readStored(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
 function saveStored(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
@@ -15,6 +15,7 @@ for(const key of jewelryKeys)if(typeof savedChoice?.[key]==='boolean')characterC
 for (const key of Object.keys(choiceOptions)) {
   if (key !== 'hair' && key !== 'view' && choiceOptions[key].includes(savedChoice?.[key])) characterChoice[key] = savedChoice[key];
 }
+if(savedChoice?.earringStyle==='cross')characterChoice.earringStyle='hoopcross';
 // Migrate the old generic chain switch to the explicit no-necklace choice.
 if(savedChoice?.chain===false)characterChoice.necklace='none';
 characterChoice.chain=characterChoice.necklace!=='none';
