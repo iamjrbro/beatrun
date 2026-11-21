@@ -6,6 +6,7 @@ const el = id => { if (!uiNodes.has(id)) uiNodes.set(id,document.getElementById(
 const music = el('music');
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
 const choiceOptions = {outfit:['black','white','neon','orange','jeweled','vetements','racer','blueflame','crown','vethood'],hair:['blond','pink','turquoise','green'],pants:['sparkle','plain','camo','light'],shoes:['sneakers','boots','nike'],view:['front','profile'],necklace:['none','luketa','cuban','cubanGold','cross','face'],earringStyle:['stud','hoopcross'],braceletStyle:['none','cuban','tennis','duo'],grillzStyle:['iced','gold']};
+let menuPreviewView='front';
 const characterChoice = {outfit:'black',hair:'blond',pants:'sparkle',shoes:'sneakers',view:'profile',chain:true,earrings:true,pantsAccessory:true,necklace:'luketa',earringStyle:'stud',braceletStyle:'cuban',grillz:false,grillzStyle:'iced'};
 function readStored(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
 function saveStored(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
@@ -490,13 +491,16 @@ function drawPlayer(alpha = 0) {
 function drawMenuPortrait() {
   const rect=el('portrait-anchor').getBoundingClientRect();
   if (rect.bottom<0 || rect.top>canvas.height || rect.height<=0) return;
-  const scale=Math.min(2.05,(rect.height-28)/146,(rect.width-25)/146);
-  const x=rect.x+rect.width/2, y=rect.y+rect.height/2+7;
-  ctx.save();ctx.beginPath();ctx.rect(rect.x,rect.y,rect.width,rect.height);ctx.clip();
-  ctx.fillStyle='#153b3a66';ctx.strokeStyle='#477a6b88';ctx.lineWidth=1;
-  ctx.beginPath();ctx.arc(x,y-7,scale*73,0,Math.PI*2);ctx.fill();ctx.stroke();
-  // Front portrait makes the face and jewelry readable; view buttons set the run angle.
-  drawDJ(ctx,{...characterChoice,view:'front',x,y,scale,phase:performance.now()/20,pose:'idle'});ctx.restore();
+  const portrait=el('portrait-canvas'),paint=portrait.getContext('2d');
+  const width=Math.round(rect.width),height=Math.round(rect.height);
+  if(portrait.width!==width)portrait.width=width;
+  if(portrait.height!==height)portrait.height=height;
+  paint.clearRect(0,0,width,height);
+  const scale=Math.min(2.25,(height-28)/146,(width-25)/146);
+  const x=width/2,y=height/2+7;
+  paint.fillStyle='#153b3a66';paint.strokeStyle='#477a6b88';paint.lineWidth=1;
+  paint.beginPath();paint.arc(x,y-7,scale*73,0,Math.PI*2);paint.fill();paint.stroke();
+  drawDJ(paint,{...characterChoice,view:menuPreviewView,x,y,scale,phase:performance.now()/20,pose:'idle'});
 }
 function drawEffects() {
   ctx.save();

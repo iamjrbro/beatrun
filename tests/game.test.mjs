@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
-const sources=['character.js','stage-art.js','game.js'].map(file=>readFileSync(new URL('../'+file,import.meta.url),'utf8'));
+const sources=['character.js','stage-art.js','game.js','wardrobe.js'].map(file=>readFileSync(new URL('../'+file,import.meta.url),'utf8'));
 function fixture({width=390,height=844,blockedStorage=false,cachedArt=false}={}) {
   const events={},elements=new Map(),storage=new Map([['beat-runner-character',JSON.stringify({hair:'pink',outfit:'white',view:'front'})]]);
   const gradient={addColorStop(){}};
@@ -360,4 +360,24 @@ for(const factor of [.72,1.28])for(const distance of [0,30000])for(const gap of 
   assert.equal(f.run('plates'),0,'LUKETA consists of letters without a plate');
 }
 
-console.log(`OK: direct necklace choices, no pendant plate and light baggy jeans; gold grillz and hoop-cross earrings; photo outfits and jewelry styles; independent jewelry choices; drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);
+
+// Fitting room tabs never alter the outfit, saved choices or the default side-on run.
+{
+  const f=fixture();const original=f.run('JSON.stringify(characterChoice)');
+  assert.equal(f.element('wardrobe-panel-clothes').hidden,false);
+  f.events['tab-jewels:click']();assert.equal(f.element('wardrobe-panel-clothes').hidden,true);
+  assert.equal(f.element('wardrobe-panel-jewels').hidden,false);
+  f.events['filter-bracelets:click']();assert.equal(f.element('filter-panel-necklaces').hidden,true);
+  assert.equal(f.element('filter-panel-bracelets').hidden,false);
+  f.events['tab-jewels:keydown']({key:'Home',preventDefault(){}});
+  assert.equal(f.element('wardrobe-panel-clothes').hidden,false);
+  f.events['filter-hoodies:click']();assert.equal(f.element('filter-panel-blouses').hidden,true);
+  f.events['portrait-profile:click']();assert.equal(f.run('menuPreviewView'),'profile');
+  assert.equal(f.run('JSON.stringify(characterChoice)'),original);
+  for(const id of ['outfit-crown','hair-pink','pants-light','shoes-boots','necklace-cubanGold','earringStyle-hoopcross','braceletStyle-duo','grillzStyle-gold','jewelry-pantsAccessory'])
+    f.run(`drawWardrobeThumbnail(el('game'),'${id}');`);
+  f.events['outfit-vetements:click']();f.events['play:click']();assert.equal(f.run('STATE'),'playing');
+  assert.equal(f.run('characterChoice.view'),'profile');assert.equal(f.run('characterChoice.outfit'),'vetements');
+}
+
+console.log(`OK: compact fitting tabs, thumbnails and separate portrait angle; direct necklace choices, no pendant plate and light baggy jeans; gold grillz and hoop-cross earrings; photo outfits and jewelry styles; independent jewelry choices; drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);

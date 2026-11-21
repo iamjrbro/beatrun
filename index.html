@@ -5,63 +5,428 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#080c18">
   <title>Beat Runner · LUKETA</title>
-  <link rel="stylesheet" href="style.css?v=20261121-catalog-labels">
+  <link rel="stylesheet" href="style.css?v=20261121-fitting-room">
 </head>
 <body>
-  <canvas id="game" tabindex="0" aria-label="Beat Runner: colete vinis, pendrives, diamantes, pulseiras de backstage e corações; pule caixas de som, cases e cabos. Espaço, seta para cima ou toque para pular; dois toques para pulo duplo."></canvas>
+  <canvas id="game" tabindex="0" aria-label="Beat Runner: colete vinis, pendrives, diamantes, pulseiras de backstage e corações; pule caixas de som, cases e cabos. Espaço, seta para cima ou toque para pular; dois toques para pulo duplo.">
+</canvas>
   <section id="menu-screen" aria-label="Prepare seu set">
     <div class="menu-shell">
-      <header class="intro-title"><p class="eyebrow">UM JOGO FEITO PRA VOCÊ</p><h1>BEAT RUNNER</h1><p>Para sempre o DJ</p></header>
-      <div class="persona"><div id="portrait-anchor" aria-hidden="true"></div><p class="artist">LUKETA <span>NO COMANDO DO SOM</span></p><p id="start-best" class="muted"></p></div>
+      <header class="intro-title">
+<p class="eyebrow">UM JOGO FEITO PRA VOCÊ</p>
+<h1>BEAT RUNNER</h1>
+<p>Para sempre o DJ</p>
+</header>
+      <div class="persona">
+<div id="portrait-anchor" aria-hidden="true">
+<canvas id="portrait-canvas">
+</canvas>
+</div>
+<p class="artist">LUKETA <span>NO COMANDO DO SOM</span>
+</p>
+<p id="start-best" class="muted">
+</p>
+<div class="portrait-views" role="group" aria-label="Prévia do personagem">
+<button id="portrait-front" type="button" aria-pressed="true">De frente</button>
+<button id="portrait-profile" type="button" aria-pressed="false">De lado</button>
+</div>
+</div>
       <div class="customizer">
-        <div class="section-heading"><span>01 / SEU LOOK</span><span id="mode-badge" class="pill">3 CHANCES POR SET</span></div>
+        <div class="section-heading">
+<span>01 / SEU LOOK</span>
+<span id="mode-badge" class="pill">3 CHANCES POR SET</span>
+</div>
         <section id="wardrobe" aria-label="Escolha seu personagem">
-          <div class="choice-row catalog-row blouse-row" role="group" aria-label="Blusa"><span>BLUSA</span><button id="outfit-black" type="button" aria-pressed="true">Polo preta</button><button id="outfit-white" type="button" aria-pressed="false">Polo branca</button><button id="outfit-jeweled" type="button" aria-pressed="false">Manga longa verde</button><button id="outfit-vetements" type="button" aria-pressed="false">Preta Vetements</button><button id="outfit-racer" type="button" aria-pressed="false">Branca Racing</button><button id="outfit-blueflame" type="button" aria-pressed="false">Manga longa azul</button></div>
-          <div class="choice-row catalog-row hoodie-row" role="group" aria-label="Moletom"><span>MOLETOM</span><button id="outfit-neon" type="button" aria-pressed="false">Moletom verde</button><button id="outfit-orange" type="button" aria-pressed="false">Moletom laranja</button><button id="outfit-crown" type="button" aria-pressed="false">Ed Hardy</button><button id="outfit-vethood" type="button" aria-pressed="false">Preto Vetements</button></div>
-          <div class="choice-row hair-choices" role="group" aria-label="Cabelo"><span>CABELO</span><button id="hair-blond" type="button" aria-pressed="true">Loiro</button><button id="hair-pink" type="button" aria-pressed="false">Rosa</button><button id="hair-turquoise" type="button" aria-pressed="false">Turquesa</button><button id="hair-green" type="button" aria-pressed="false">Verde</button></div>
-          <div class="choice-row catalog-row" role="group" aria-label="Calça"><span>CALÇA</span><button id="pants-sparkle" type="button" aria-pressed="true">Com brilhos</button><button id="pants-plain" type="button" aria-pressed="false">Jeans Preto</button><button id="pants-camo" type="button" aria-pressed="false">Militar</button><button id="pants-light" type="button" aria-pressed="false">Jeans Claro Baggy</button></div>
-          <div class="choice-row" role="group" aria-label="Calçado"><span>CALÇADO</span><button id="shoes-sneakers" type="button" aria-pressed="true">Tênis</button><button id="shoes-boots" type="button" aria-pressed="false">Bota Timberland</button><button id="shoes-nike" type="button" aria-pressed="false">Nike branco</button></div>
-          <div class="choice-row catalog-row jewelry-row" role="group" aria-label="Joia"><span>JOIA</span><button id="jewelry-earrings" type="button" aria-pressed="true" title="Colocar ou tirar os brincos">Brinco</button><button id="jewelry-pantsAccessory" type="button" aria-pressed="true" title="Colocar ou tirar o acessório da calça">Acessório de calça</button><button id="jewelry-grillz" type="button" aria-pressed="false">Grillz</button></div>
-          <div class="choice-row catalog-row necklace-row" role="group" aria-label="Modelo de corrente"><span>CORRENTE</span><button id="necklace-none" type="button" aria-pressed="false">Sem corrente</button><button id="necklace-luketa" type="button" aria-pressed="true">LUKETA</button><button id="necklace-cuban" type="button" aria-pressed="false">Iced Cuban prata</button><button id="necklace-cubanGold" type="button" aria-pressed="false">Iced Cuban dourada</button><button id="necklace-cross" type="button" aria-pressed="false">Pingente cruz</button><button id="necklace-face" type="button" aria-pressed="false">Pingente Jesus</button></div>
-          <div class="choice-row" role="group" aria-label="Modelo de brinco"><span>BRINCO</span><button id="earringStyle-stud" type="button" aria-pressed="true">Ponto de luz</button><button id="earringStyle-hoopcross" type="button" aria-pressed="false">Argolinha com cruz</button></div>
-          <div class="choice-row catalog-row bracelet-row" role="group" aria-label="Modelo de pulseira"><span>PULSEIRA</span><button id="braceletStyle-none" type="button" aria-pressed="false">Sem pulseira</button><button id="braceletStyle-cuban" type="button" aria-pressed="true">Cuban</button><button id="braceletStyle-tennis" type="button" aria-pressed="false">Tennis</button><button id="braceletStyle-duo" type="button" aria-pressed="false">Dupla cravejada</button></div>
-          <div class="choice-row" role="group" aria-label="Modelo de grillz"><span>GRILLZ</span><button id="grillzStyle-iced" type="button" aria-pressed="true">Prata cravejado</button><button id="grillzStyle-gold" type="button" aria-pressed="false">Dourado liso</button></div>
-          <div class="choice-row" role="group" aria-label="Ângulo durante a corrida"><span>CORRIDA</span><button id="view-front" type="button" aria-pressed="false">De frente</button><button id="view-profile" type="button" aria-pressed="true">De lado</button></div>
-        </section>
-        <div class="how-to"><span class="record-dot" aria-hidden="true">◎</span><p><strong>Vinis são para pegar.</strong> Caixas, cases e cabos são para pular. Oito vinis carregam um drop com proteção.</p></div>
+<nav class="wardrobe-tabs" role="tablist" aria-label="Categorias do provador">
+<button type="button" id="tab-clothes" role="tab" aria-selected="true" aria-controls="wardrobe-panel-clothes" tabindex="0">Roupa</button>
+<button type="button" id="tab-hair" role="tab" aria-selected="false" aria-controls="wardrobe-panel-hair" tabindex="-1">Cabelo</button>
+<button type="button" id="tab-pants" role="tab" aria-selected="false" aria-controls="wardrobe-panel-pants" tabindex="-1">Calça</button>
+<button type="button" id="tab-shoes" role="tab" aria-selected="false" aria-controls="wardrobe-panel-shoes" tabindex="-1">Calçado</button>
+<button type="button" id="tab-jewels" role="tab" aria-selected="false" aria-controls="wardrobe-panel-jewels" tabindex="-1">Joias</button>
+</nav>
+<div id="wardrobe-panel-clothes" role="tabpanel" aria-labelledby="tab-clothes">
+<div class="wardrobe-filters" role="tablist" aria-label="Tipo de roupa">
+<button id="filter-blouses" type="button" role="tab" aria-selected="true" aria-controls="filter-panel-blouses" tabindex="0">Blusas</button>
+<button id="filter-hoodies" type="button" role="tab" aria-selected="false" aria-controls="filter-panel-hoodies" tabindex="-1">Moletons</button>
+</div>
+<div id="filter-panel-blouses" role="tabpanel" aria-labelledby="filter-blouses">
+<div class="wardrobe-grid" role="group" aria-label="Blusa">
+<button id="outfit-black" type="button" aria-pressed="true">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-black">
+</canvas>
+<span>Polo preta</span>
+</button>
+<button id="outfit-white" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-white">
+</canvas>
+<span>Polo branca</span>
+</button>
+<button id="outfit-jeweled" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-jeweled">
+</canvas>
+<span>Manga longa verde</span>
+</button>
+<button id="outfit-vetements" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-vetements">
+</canvas>
+<span>Preta Vetements</span>
+</button>
+<button id="outfit-racer" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-racer">
+</canvas>
+<span>Branca Racing</span>
+</button>
+<button id="outfit-blueflame" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-blueflame">
+</canvas>
+<span>Manga longa azul</span>
+</button>
+</div>
+</div>
+<div id="filter-panel-hoodies" role="tabpanel" aria-labelledby="filter-hoodies" hidden>
+<div class="wardrobe-grid" role="group" aria-label="Moletom">
+<button id="outfit-neon" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-neon">
+</canvas>
+<span>Moletom verde</span>
+</button>
+<button id="outfit-orange" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-orange">
+</canvas>
+<span>Moletom laranja</span>
+</button>
+<button id="outfit-crown" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-crown">
+</canvas>
+<span>Ed Hardy</span>
+</button>
+<button id="outfit-vethood" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-vethood">
+</canvas>
+<span>Preto Vetements</span>
+</button>
+</div>
+</div>
+</div>
+<div id="wardrobe-panel-hair" role="tabpanel" aria-labelledby="tab-hair" hidden>
+<div class="wardrobe-grid" role="group" aria-label="Cabelo">
+<button id="hair-blond" type="button" aria-pressed="true">
+<canvas width="128" height="90" aria-hidden="true" data-preview="hair-blond">
+</canvas>
+<span>Loiro</span>
+</button>
+<button id="hair-pink" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="hair-pink">
+</canvas>
+<span>Rosa</span>
+</button>
+<button id="hair-turquoise" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="hair-turquoise">
+</canvas>
+<span>Turquesa</span>
+</button>
+<button id="hair-green" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="hair-green">
+</canvas>
+<span>Verde</span>
+</button>
+</div>
+</div>
+<div id="wardrobe-panel-pants" role="tabpanel" aria-labelledby="tab-pants" hidden>
+<div class="wardrobe-grid" role="group" aria-label="Calça">
+<button id="pants-sparkle" type="button" aria-pressed="true">
+<canvas width="128" height="90" aria-hidden="true" data-preview="pants-sparkle">
+</canvas>
+<span>Com brilhos</span>
+</button>
+<button id="pants-plain" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="pants-plain">
+</canvas>
+<span>Jeans Preto</span>
+</button>
+<button id="pants-camo" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="pants-camo">
+</canvas>
+<span>Militar</span>
+</button>
+<button id="pants-light" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="pants-light">
+</canvas>
+<span>Jeans Claro Baggy</span>
+</button>
+</div>
+</div>
+<div id="wardrobe-panel-shoes" role="tabpanel" aria-labelledby="tab-shoes" hidden>
+<div class="wardrobe-grid" role="group" aria-label="Calçado">
+<button id="shoes-sneakers" type="button" aria-pressed="true">
+<canvas width="128" height="90" aria-hidden="true" data-preview="shoes-sneakers">
+</canvas>
+<span>Tênis</span>
+</button>
+<button id="shoes-boots" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="shoes-boots">
+</canvas>
+<span>Bota Timberland</span>
+</button>
+<button id="shoes-nike" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="shoes-nike">
+</canvas>
+<span>Nike branco</span>
+</button>
+</div>
+</div>
+<div id="wardrobe-panel-jewels" role="tabpanel" aria-labelledby="tab-jewels" hidden>
+<div class="wardrobe-filters" role="tablist" aria-label="Tipo de joia">
+<button id="filter-necklaces" type="button" role="tab" aria-selected="true" aria-controls="filter-panel-necklaces" tabindex="0">Correntes</button>
+<button id="filter-earrings" type="button" role="tab" aria-selected="false" aria-controls="filter-panel-earrings" tabindex="-1">Brincos</button>
+<button id="filter-bracelets" type="button" role="tab" aria-selected="false" aria-controls="filter-panel-bracelets" tabindex="-1">Pulseiras</button>
+<button id="filter-extras" type="button" role="tab" aria-selected="false" aria-controls="filter-panel-extras" tabindex="-1">Extras</button>
+</div>
+<div id="filter-panel-necklaces" role="tabpanel" aria-labelledby="filter-necklaces">
+<div class="wardrobe-grid" role="group" aria-label="Modelo de corrente">
+<button id="necklace-none" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="necklace-none">
+</canvas>
+<span>Sem corrente</span>
+</button>
+<button id="necklace-luketa" type="button" aria-pressed="true">
+<canvas width="128" height="90" aria-hidden="true" data-preview="necklace-luketa">
+</canvas>
+<span>LUKETA</span>
+</button>
+<button id="necklace-cuban" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="necklace-cuban">
+</canvas>
+<span>Iced Cuban prata</span>
+</button>
+<button id="necklace-cubanGold" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="necklace-cubanGold">
+</canvas>
+<span>Iced Cuban dourada</span>
+</button>
+<button id="necklace-cross" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="necklace-cross">
+</canvas>
+<span>Pingente cruz</span>
+</button>
+<button id="necklace-face" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="necklace-face">
+</canvas>
+<span>Pingente Jesus</span>
+</button>
+</div>
+</div>
+<div id="filter-panel-earrings" role="tabpanel" aria-labelledby="filter-earrings" hidden>
+<div class="wardrobe-grid" role="group" aria-label="Modelo de brinco">
+<button id="earringStyle-stud" type="button" aria-pressed="true">
+<canvas width="128" height="90" aria-hidden="true" data-preview="earringStyle-stud">
+</canvas>
+<span>Ponto de luz</span>
+</button>
+<button id="earringStyle-hoopcross" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="earringStyle-hoopcross">
+</canvas>
+<span>Argolinha com cruz</span>
+</button>
+</div>
+</div>
+<div id="filter-panel-bracelets" role="tabpanel" aria-labelledby="filter-bracelets" hidden>
+<div class="wardrobe-grid" role="group" aria-label="Modelo de pulseira">
+<button id="braceletStyle-none" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="braceletStyle-none">
+</canvas>
+<span>Sem pulseira</span>
+</button>
+<button id="braceletStyle-cuban" type="button" aria-pressed="true">
+<canvas width="128" height="90" aria-hidden="true" data-preview="braceletStyle-cuban">
+</canvas>
+<span>Cuban</span>
+</button>
+<button id="braceletStyle-tennis" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="braceletStyle-tennis">
+</canvas>
+<span>Tennis</span>
+</button>
+<button id="braceletStyle-duo" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="braceletStyle-duo">
+</canvas>
+<span>Dupla cravejada</span>
+</button>
+</div>
+</div>
+<div id="filter-panel-extras" role="tabpanel" aria-labelledby="filter-extras" hidden>
+<div class="wardrobe-grid" role="group" aria-label="Joia">
+<button id="jewelry-earrings" type="button" aria-pressed="true" title="Colocar ou tirar os brincos">
+<canvas width="128" height="90" aria-hidden="true" data-preview="jewelry-earrings">
+</canvas>
+<span>Brinco</span>
+</button>
+<button id="jewelry-pantsAccessory" type="button" aria-pressed="true" title="Colocar ou tirar o acessório da calça">
+<canvas width="128" height="90" aria-hidden="true" data-preview="jewelry-pantsAccessory">
+</canvas>
+<span>Acessório de calça</span>
+</button>
+<button id="jewelry-grillz" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="jewelry-grillz">
+</canvas>
+<span>Grillz</span>
+</button>
+</div>
+<div class="wardrobe-grid" role="group" aria-label="Modelo de grillz">
+<button id="grillzStyle-iced" type="button" aria-pressed="true">
+<canvas width="128" height="90" aria-hidden="true" data-preview="grillzStyle-iced">
+</canvas>
+<span>Prata cravejado</span>
+</button>
+<button id="grillzStyle-gold" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="grillzStyle-gold">
+</canvas>
+<span>Dourado liso</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<div class="wardrobe-footer">
+<div>
+<p class="muted">Seu look fica salvo.</p>        <div class="mode-picker" role="group" aria-label="Modo de jogo">
+<button id="mode-challenge" type="button" aria-pressed="true">Desafio</button>
+<button id="mode-chill" type="button" aria-pressed="false">De boa</button>
+</div>
+</div>        <button id="play" class="primary" type="button">SOLTA O TRAP <span aria-hidden="true">↗</span>
+</button>
+</div>      </div>
+      <details class="set-options">
+<summary>Como jogar e opções do set</summary>        <div class="how-to">
+<span class="record-dot" aria-hidden="true">◎</span>
+<p>
+<strong>Vinis são para pegar.</strong> Caixas, cases e cabos são para pular. Oito vinis carregam um drop com proteção.</p>
+</div>
         <ul class="bonus-guide" aria-label="Itens especiais">
-          <li><strong>▰ PENDRIVE</strong> Set secreto: +100 pontos</li>
-          <li><strong>◇ DIAMANTE</strong> +150 pontos</li>
-          <li><strong>▱ BACKSTAGE</strong> Protege de uma colisão</li>
-          <li><strong>♥ CORAÇÃO</strong> Recupera uma chance</li>
+          <li>
+<strong>▰ PENDRIVE</strong> Set secreto: +100 pontos</li>
+          <li>
+<strong>◇ DIAMANTE</strong> +150 pontos</li>
+          <li>
+<strong>▱ BACKSTAGE</strong> Protege de uma colisão</li>
+          <li>
+<strong>♥ CORAÇÃO</strong> Recupera uma chance</li>
         </ul>
-        <div class="mode-picker" role="group" aria-label="Modo de jogo"><button id="mode-challenge" type="button" aria-pressed="true">Desafio</button><button id="mode-chill" type="button" aria-pressed="false">De boa</button></div>
+
         <p id="mode-description" class="muted">Três chances. Colete, desvie e tente bater seu recorde.</p>
         <p class="muted">Lean desacelera e Red Bull acelera por 5 segundos. Pulos perfeitos rendem +25 pontos!</p>
-        <button id="play" class="primary" type="button">SOLTA O TRAP <span aria-hidden="true">↗</span></button>
+
         <p id="training-label" class="muted">Primeira vez? Seu primeiro set tem treino guiado.</p>
-        <details class="tour-route"><summary>A turnê · 12 cenários</summary><p>Estúdio → 213 → Primeira Pista → Festival → Cena2k Festival → Terraço Lunar → Último Metrô → Bosque dos Ecos → Lago do Silêncio → Dunas do Crepúsculo → Salão das Horas → Amanhecer</p></details>
+        <details class="tour-route">
+<summary>A turnê · 12 cenários</summary>
+<p>Estúdio → 213 → Primeira Pista → Festival → Cena2k Festival → Terraço Lunar → Último Metrô → Bosque dos Ecos → Lago do Silêncio → Dunas do Crepúsculo → Salão das Horas → Amanhecer</p>
+</details>
         <p class="start-help">ESPAÇO / ↑ / TOQUE · PULO DUPLO DISPONÍVEL</p>
-      </div>
-      <section class="collection" aria-label="Conquistas"><div class="section-heading"><span>02 / SEUS MOMENTOS</span><span id="achievement-count">0 / 5</span></div><div id="achievements" class="achievement-grid"></div><button id="replay-tutorial" class="text-button" type="button">REPETIR O TREINO GUIADO</button></section>
+<div class="run-view">
+<p class="muted">Ângulo durante a corrida</p>
+<div class="wardrobe-grid" role="group" aria-label="Ângulo durante a corrida">
+<button id="view-front" type="button" aria-pressed="false">De frente</button>
+<button id="view-profile" type="button" aria-pressed="true">De lado</button>
+</div>
+</div>
+</details>
+      <section class="collection" aria-label="Conquistas">
+<div class="section-heading">
+<span>02 / SEUS MOMENTOS</span>
+<span id="achievement-count">0 / 5</span>
+</div>
+<div id="achievements" class="achievement-grid">
+</div>
+<button id="replay-tutorial" class="text-button" type="button">REPETIR O TREINO GUIADO</button>
+</section>
     </div>
   </section>
   <div id="hud" hidden>
-    <div class="stage-info"><span id="stage-label">SET 01 · ESTÚDIO</span><small id="stage-progress">PRÓXIMO: PRIMEIRA PISTA</small></div>
-    <div class="hud-stat"><small>PONTOS</small><strong id="score">0</strong></div>
-    <div class="hud-stat"><small>VINIS</small><strong id="vinyl-count">0</strong></div>
-    <div class="hud-stat"><small>CHANCES</small><strong id="lives" aria-label="3 chances">♥ ♥ ♥</strong></div>
-    <div class="mission-row" aria-label="Missões deste set"><span id="mission-0"></span><span id="mission-1"></span><span id="mission-2"></span></div>
-    <div class="energy-row"><span id="drop-label">PRÓXIMO DROP</span><progress id="energy" max="100" value="0" aria-label="Energia para o drop"></progress><span id="combo">x0</span></div>
+    <div class="stage-info">
+<span id="stage-label">SET 01 · ESTÚDIO</span>
+<small id="stage-progress">PRÓXIMO: PRIMEIRA PISTA</small>
+</div>
+    <div class="hud-stat">
+<small>PONTOS</small>
+<strong id="score">0</strong>
+</div>
+    <div class="hud-stat">
+<small>VINIS</small>
+<strong id="vinyl-count">0</strong>
+</div>
+    <div class="hud-stat">
+<small>CHANCES</small>
+<strong id="lives" aria-label="3 chances">♥ ♥ ♥</strong>
+</div>
+    <div class="mission-row" aria-label="Missões deste set">
+<span id="mission-0">
+</span>
+<span id="mission-1">
+</span>
+<span id="mission-2">
+</span>
+</div>
+    <div class="energy-row">
+<span id="drop-label">PRÓXIMO DROP</span>
+<progress id="energy" max="100" value="0" aria-label="Energia para o drop">
+</progress>
+<span id="combo">x0</span>
+</div>
   </div>
-  <div id="coach" role="status" aria-live="polite" hidden></div>
-  <div id="toast" role="status" aria-live="polite" hidden></div>
-  <section id="result-screen" class="modal-screen" aria-label="Resultado do set" hidden><div class="result-card"><p class="eyebrow">LUKETA · FIM DO SET</p><h2 id="result-heading">Até os brabos erram o cue. Solta outra!</h2><p id="result-message"></p><p id="result-details"></p><div class="result-stats"><div><small>PONTOS</small><strong id="result-score">0</strong></div><div><small>VINIS</small><strong id="result-vinyls">0</strong></div><div><small>DROPS</small><strong id="result-drops">0</strong></div></div><p id="result-best" class="muted"></p><button id="retry" class="primary" type="button">MAIS UM SET</button><button id="change-look" class="secondary" type="button">ESCOLHER PERSONAGEM</button></div></section>
-  <section id="pause-screen" class="modal-screen" aria-label="Set em pausa" hidden><div class="result-card"><p class="eyebrow">O SOM ESPERA POR VOCÊ</p><h2>Set em pausa.</h2><button id="resume" class="primary" type="button">CONTINUAR O SET</button><button id="end-set" class="secondary" type="button">ENCERRAR E VER MEU SET</button></div></section>
-  <div class="utility"><button id="pause" type="button" hidden>PAUSAR</button><button id="sound" type="button" aria-label="Silenciar áudio" aria-pressed="false">SOM ON</button></div>
-  <audio id="music" loop preload="none"><source src="music.mp3" type="audio/mpeg"></audio>
-  <script src="character.js?v=20261121-catalog-labels"></script>
-  <script src="stage-art.js?v=20261121-catalog-labels"></script>
-  <script src="game.js?v=20261121-catalog-labels"></script>
+  <div id="coach" role="status" aria-live="polite" hidden>
+</div>
+  <div id="toast" role="status" aria-live="polite" hidden>
+</div>
+  <section id="result-screen" class="modal-screen" aria-label="Resultado do set" hidden>
+<div class="result-card">
+<p class="eyebrow">LUKETA · FIM DO SET</p>
+<h2 id="result-heading">Até os brabos erram o cue. Solta outra!</h2>
+<p id="result-message">
+</p>
+<p id="result-details">
+</p>
+<div class="result-stats">
+<div>
+<small>PONTOS</small>
+<strong id="result-score">0</strong>
+</div>
+<div>
+<small>VINIS</small>
+<strong id="result-vinyls">0</strong>
+</div>
+<div>
+<small>DROPS</small>
+<strong id="result-drops">0</strong>
+</div>
+</div>
+<p id="result-best" class="muted">
+</p>
+<button id="retry" class="primary" type="button">MAIS UM SET</button>
+<button id="change-look" class="secondary" type="button">ESCOLHER PERSONAGEM</button>
+</div>
+</section>
+  <section id="pause-screen" class="modal-screen" aria-label="Set em pausa" hidden>
+<div class="result-card">
+<p class="eyebrow">O SOM ESPERA POR VOCÊ</p>
+<h2>Set em pausa.</h2>
+<button id="resume" class="primary" type="button">CONTINUAR O SET</button>
+<button id="end-set" class="secondary" type="button">ENCERRAR E VER MEU SET</button>
+</div>
+</section>
+  <div class="utility">
+<button id="pause" type="button" hidden>PAUSAR</button>
+<button id="sound" type="button" aria-label="Silenciar áudio" aria-pressed="false">SOM ON</button>
+</div>
+  <audio id="music" loop preload="none">
+<source src="music.mp3" type="audio/mpeg">
+</audio>
+  <script src="character.js?v=20261121-fitting-room">
+</script>
+  <script src="stage-art.js?v=20261121-fitting-room">
+</script>
+  <script src="game.js?v=20261121-fitting-room">
+</script>
+  <script src="wardrobe.js?v=20261121-fitting-room">
+</script>
 </body>
 </html>
