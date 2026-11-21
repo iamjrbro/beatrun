@@ -302,7 +302,8 @@ for(const factor of [.72,1.28])for(const distance of [0,30000])for(const gap of 
 // Jewelry switches are independent, persist, and reach both preview and running artwork.
 {
   const f=fixture();
-  for(const key of ['chain','earrings','pantsAccessory']){
+  f.events['necklace-none:click']();
+  for(const key of ['earrings','pantsAccessory']){
     assert.equal(f.run(`characterChoice.${key}`),true);
     f.events['jewelry-'+key+':click']();
     assert.equal(f.element('jewelry-'+key).attributes['aria-pressed'],'false');
@@ -322,13 +323,13 @@ for(const factor of [.72,1.28])for(const distance of [0,30000])for(const gap of 
 // Photo collection keeps jewelry styles independent and selects visible accessories.
 {
   const f=fixture();
-  f.events['jewelry-chain:click']();assert.equal(f.run('characterChoice.chain'),false);
+  f.events['necklace-none:click']();assert.equal(f.run('characterChoice.chain'),false);
   f.events['necklace-cross:click']();assert.equal(f.run('characterChoice.chain'),true);
   f.events['earringStyle-cross:click']();f.events['braceletStyle-duo:click']();f.events['jewelry-grillz:click']();
   const saved=JSON.parse(f.storage.get('beat-runner-character'));
   assert.equal(saved.necklace,'cross');assert.equal(saved.earringStyle,'cross');assert.equal(saved.braceletStyle,'duo');assert.equal(saved.grillz,true);
   for(const outfit of ['vetements','racer','blueflame','crown','vethood'])for(const view of ['front','profile'])
-    for(const necklace of ['luketa','cuban','cross','face'])for(const braceletStyle of ['none','cuban','tennis','duo']){
+    for(const necklace of ['none','luketa','cuban','cubanGold','cross','face'])for(const braceletStyle of ['none','cuban','tennis','duo']){
       f.run(`drawDJ(ctx,{x:100,y:100,outfit:'${outfit}',view:'${view}',necklace:'${necklace}',braceletStyle:'${braceletStyle}',earringStyle:'cross',grillz:true,running:true,phase:4});`);
     }
 }
@@ -343,4 +344,20 @@ for(const factor of [.72,1.28])for(const distance of [0,30000])for(const gap of 
     f.run(`drawDJ(ctx,{x:100,y:100,view:'${view}',grillz:true,grillzStyle:'${grillzStyle}',earringStyle:'hoopcross'});`);
 }
 
-console.log(`OK: gold grillz and hoop-cross earrings; photo outfits and jewelry styles; independent jewelry choices; drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);
+
+{
+  const f=fixture();
+  assert.equal(f.events['jewelry-chain:click'],undefined,'no duplicate generic chain switch');
+  for(const type of ['none','luketa','cuban','cubanGold']){
+    f.events['necklace-'+type+':click']();
+    assert.equal(f.run('characterChoice.necklace'),type);
+    assert.equal(f.run('characterChoice.chain'),type!=='none');
+    assert.equal(f.element('necklace-luketa').attributes['aria-pressed'],String(type==='luketa'));
+  }
+  f.events['pants-light:click']();assert.equal(JSON.parse(f.storage.get('beat-runner-character')).pants,'light');
+  for(const view of ['front','profile'])f.run(`drawDJ(ctx,{x:100,y:100,view:'${view}',pants:'light',necklace:'cubanGold'});`);
+  f.run(`let plates=0;ctx.fillRect=()=>plates++;drawNecklace(ctx,'luketa',false);`);
+  assert.equal(f.run('plates'),0,'LUKETA consists of letters without a plate');
+}
+
+console.log(`OK: direct necklace choices, no pendant plate and light baggy jeans; gold grillz and hoop-cross earrings; photo outfits and jewelry styles; independent jewelry choices; drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);

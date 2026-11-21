@@ -83,15 +83,28 @@ function drawPhotoSleeve(ctx,outfit){
   ctx.restore();
 }
 function drawNecklace(ctx,style,profile){
+  if(style==='none')return;
+  const gold=style==='cubanGold';
   ctx.save();if(profile){ctx.translate(9,-12);ctx.scale(.56,1);}else ctx.translate(0,-13);
-  const thick=style==='cuban'||style==='face';
-  ctx.strokeStyle='#9da9bc';ctx.lineWidth=thick?4:1.8;ctx.beginPath();ctx.moveTo(-11,-4);ctx.quadraticCurveTo(-14,11,0,17);ctx.quadraticCurveTo(14,11,11,-4);ctx.stroke();
-  ctx.strokeStyle='#edf4ff';ctx.lineWidth=thick?2: .7;ctx.stroke();
-  if(thick)for(let i=0;i<15;i++){const t=i/14*Math.PI;ctx.strokeStyle=i%2?'#ffffff':'#b7c5d8';ctx.lineWidth=.9;ctx.beginPath();ctx.ellipse(-11*Math.cos(t),-3+19*Math.sin(t),1.6,2.2,-.5,0,Math.PI*2);ctx.stroke();}
+  const thick=style==='cuban'||gold||style==='face';
+  ctx.strokeStyle=gold?'#b18432':'#9da9bc';ctx.lineWidth=thick?4:1.8;ctx.beginPath();ctx.moveTo(-11,-4);
+  if(style==='luketa'){ctx.quadraticCurveTo(-16,7,-12,20);ctx.moveTo(11,-4);ctx.quadraticCurveTo(16,7,12,20);}
+  else{ctx.quadraticCurveTo(-14,11,0,17);ctx.quadraticCurveTo(14,11,11,-4);}
+  ctx.stroke();
+  ctx.strokeStyle=gold?'#f3d17b':'#edf4ff';ctx.lineWidth=thick?2: .7;ctx.stroke();
+  if(thick)for(let i=0;i<15;i++){const t=i/14*Math.PI;ctx.strokeStyle=gold?(i%2?'#fff0be':'#d6a84e'):(i%2?'#ffffff':'#b7c5d8');ctx.lineWidth=.9;ctx.beginPath();ctx.ellipse(-11*Math.cos(t),-3+19*Math.sin(t),1.6,2.2,-.5,0,Math.PI*2);ctx.stroke();}
   ctx.fillStyle='#dce6f5';ctx.strokeStyle='#ffffff';ctx.lineWidth=.6;
   if(style==='cross'){ctx.fillRect(-1.7,14,3.4,14);ctx.fillRect(-5,18,10,3.4);}
   if(style==='face'){ctx.beginPath();ctx.ellipse(0,23,5,6.5,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#8898b0';ctx.beginPath();ctx.moveTo(-3,21);ctx.lineTo(-1,21);ctx.moveTo(1,21);ctx.lineTo(3,21);ctx.moveTo(-2,26);ctx.lineTo(2,26);ctx.stroke();}
-  if(style==='luketa'){ctx.fillStyle='#7e899e';ctx.fillRect(-15,18,30,10);ctx.fillStyle='#dce5f2';ctx.fillRect(-14,19,28,8);ctx.fillStyle='#ffffff';ctx.font='bold 6.4px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('LUKETA',0,23);}
+  if(style==='luketa'){
+    // Individual iced letters have no solid plate or rectangular backing.
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='900 7px Arial';
+    ctx.strokeStyle='#8997ac';ctx.lineWidth=.45;ctx.strokeText('LUKETA',0,23);
+    ctx.fillStyle='#edf5ff';ctx.fillText('LUKETA',0,23);
+    for(const px of [-12,-7,-2,3,8,12]){
+      ctx.strokeStyle='#ffffff';ctx.lineWidth=.35;ctx.beginPath();ctx.moveTo(px-.65,21);ctx.lineTo(px+.65,21);ctx.moveTo(px,20.3);ctx.lineTo(px,21.7);ctx.stroke();
+    }
+  }
   ctx.restore();
 }
 function drawCrossEarring(ctx,x,y,hoop=false){
@@ -104,6 +117,15 @@ function drawGrillz(ctx,profile,style='iced'){
   for(let row=0;row<2;row++)for(let i=0;i<6;i++){ctx.fillStyle=style==='gold'?'#dfb34a':i%2?'#f7fbff':'#b8c9e0';ctx.fillRect(-5.8+i*1.9,-2+row*2,1.6,1.7);}
   if(style==='gold'){ctx.strokeStyle='#f5d97d';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(-5,-1.6);ctx.lineTo(5,-1.6);ctx.stroke();ctx.restore();return;}
   ctx.strokeStyle='#ffffff';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(-4,-3);ctx.lineTo(-4,0);ctx.moveTo(-5.5,-1.5);ctx.lineTo(-2.5,-1.5);ctx.stroke();ctx.restore();
+}
+
+function drawDenimWash(ctx,x,y,w,h){
+  ctx.save();ctx.beginPath();ctx.roundRect(x,y,w,h,5);ctx.clip();
+  ctx.fillStyle='#c0d5e1';ctx.globalAlpha=.28;
+  ctx.beginPath();ctx.ellipse(x+w*.55,y+h*.4,w*.34,h*.35,0,0,Math.PI*2);ctx.fill();
+  ctx.globalAlpha=.12;ctx.strokeStyle='#e3edf3';ctx.lineWidth=.35;
+  for(let i=0;i<9;i++){ctx.beginPath();ctx.moveTo(x+3,y+3+i*3);ctx.lineTo(x+w-3,y+2+i*3);ctx.stroke();}
+  ctx.globalAlpha=1;ctx.strokeStyle='#b5c5cb';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(x+2,y+3);ctx.lineTo(x+2,y+h-2);ctx.stroke();ctx.restore();
 }
 
 function drawCamouflage(ctx, x, y, w, h) {
@@ -204,7 +226,8 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   [-1, 1].forEach(side => {
     ctx.save(); ctx.translate(side * 4, 20);
     ctx.rotate(airborne ? side * 0.55 : side * swing * 0.55);
-    box(-11, -1, 23, 31, 5, side < 0 ? '#1e2028' : '#30333c');
+    box(pants==='light'?-12:-11, -1, pants==='light'?26:23, 31, 5, pants==='light'?(side<0?'#83a7bf':'#9bbbd0'):side < 0 ? '#1e2028' : '#30333c');
+    if(pants==='light')drawDenimWash(ctx,-12,-1,26,31);
     if (pants === 'camo') drawCamouflage(ctx, -11, -1, 23, 31);
     line([[-7, 4], [-8, 24]], '#5c606a', 0.8);
     line([[1, 7], [8, 8]], '#545861', 1);
@@ -321,10 +344,11 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   [-1, 1].forEach(side => {
     ctx.save(); ctx.translate(side * 10, 21);
     ctx.rotate(airborne ? side * -0.35 : swing * side * 0.35);
-    shape(-11, -2, 23, 31, 5, side < 0 ? '#20222a' : '#30333c');
+    shape(pants==='light'?-12:-11, -2, pants==='light'?26:23, 31, 5, pants==='light'?(side<0?'#83a7bf':'#9bbbd0'):side < 0 ? '#20222a' : '#30333c');
+    if(pants==='light')drawDenimWash(ctx,-12,-2,26,31);
     if (pants === 'camo') drawCamouflage(ctx, -11, -2, 23, 31);
     line([[2, 5], [1, 22]], '#626670', 0.8);
-    line([[-6, 1], [-6, 23]], '#14161d', 0.8);
+    line([[-6, 1], [-6, 23]], pants==='light'?'#799fb8':'#14161d', 0.8);
     line([[-4, 5], [4, 6]], '#484c57', 1.5);
     for (let i = 0; pants === 'sparkle' && i < 9; i++) {
       const dx = -5 + (i * 7 % 12), dy = 2 + (i * 11 % 21);
