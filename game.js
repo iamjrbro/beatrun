@@ -5,12 +5,12 @@ const uiNodes = new Map();
 const el = id => { if (!uiNodes.has(id)) uiNodes.set(id,document.getElementById(id)); return uiNodes.get(id); };
 const music = el('music');
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
-const choiceOptions = {outfit:['black','white','neon','orange','jeweled'],hair:['blond','pink','turquoise','green'],pants:['sparkle','plain','camo'],shoes:['sneakers','boots','nike'],view:['front','profile']};
-const characterChoice = {outfit:'black',hair:'blond',pants:'sparkle',shoes:'sneakers',view:'profile',chain:true,earrings:true,pantsAccessory:true};
+const choiceOptions = {outfit:['black','white','neon','orange','jeweled','vetements','racer','blueflame','crown','vethood'],hair:['blond','pink','turquoise','green'],pants:['sparkle','plain','camo'],shoes:['sneakers','boots','nike'],view:['front','profile'],necklace:['luketa','cuban','cross','face'],earringStyle:['stud','cross'],braceletStyle:['none','cuban','tennis','duo']};
+const characterChoice = {outfit:'black',hair:'blond',pants:'sparkle',shoes:'sneakers',view:'profile',chain:true,earrings:true,pantsAccessory:true,necklace:'luketa',earringStyle:'stud',braceletStyle:'cuban',grillz:false};
 function readStored(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
 function saveStored(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
 const savedChoice = readStored('beat-runner-character', {});
-const jewelryKeys=['chain','earrings','pantsAccessory'];
+const jewelryKeys=['chain','earrings','pantsAccessory','grillz'];
 for(const key of jewelryKeys)if(typeof savedChoice?.[key]==='boolean')characterChoice[key]=savedChoice[key];
 for (const key of Object.keys(choiceOptions)) {
   if (key !== 'hair' && key !== 'view' && choiceOptions[key].includes(savedChoice?.[key])) characterChoice[key] = savedChoice[key];
@@ -18,12 +18,14 @@ for (const key of Object.keys(choiceOptions)) {
 function selectCharacter(key, value) {
   if (!choiceOptions[key]?.includes(value)) return;
   characterChoice[key] = value;
+  const jewelryToggle={necklace:'chain',earringStyle:'earrings'}[key];
+  if(jewelryToggle){characterChoice[jewelryToggle]=true;el('jewelry-'+jewelryToggle).setAttribute('aria-pressed','true');}
   for (const option of choiceOptions[key]) el(key + '-' + option).setAttribute('aria-pressed', String(option === value));
   saveStored('beat-runner-character', characterChoice);
 }
 for (const [key, values] of Object.entries(choiceOptions)) {
   for (const value of values) el(key + '-' + value).addEventListener('click', () => selectCharacter(key, value));
-  selectCharacter(key, characterChoice[key]);
+  for(const value of values)el(key+'-'+value).setAttribute('aria-pressed',String(value===characterChoice[key]));
 }
 function toggleJewelry(key){
   characterChoice[key]=!characterChoice[key];

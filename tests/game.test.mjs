@@ -29,7 +29,7 @@ function fixture({width=390,height=844,blockedStorage=false,cachedArt=false}={})
   assert.equal(run('characterChoice.hair'),'blond'); assert.equal(run('characterChoice.view'),'profile');
   assert.equal(run('characterChoice.outfit'),'white');
   events['hair-pink:click']();events['pants-camo:click']();events['outfit-orange:click']();events['shoes-nike:click']();
-  assert.deepEqual(JSON.parse(storage.get('beat-runner-character')),{outfit:'orange',hair:'pink',pants:'camo',shoes:'nike',view:'profile',chain:true,earrings:true,pantsAccessory:true});
+  assert.deepEqual(JSON.parse(storage.get('beat-runner-character')),{outfit:'orange',hair:'pink',pants:'camo',shoes:'nike',view:'profile',chain:true,earrings:true,pantsAccessory:true,necklace:'luketa',earringStyle:'stud',braceletStyle:'cuban',grillz:false});
   assert.equal(element('hair-pink').attributes['aria-pressed'],'true');
   run("selectCharacter('hair','invalid');");assert.equal(run('characterChoice.hair'),'pink');
   run(`for(const outfit of choiceOptions.outfit) for(const hair of choiceOptions.hair) for(const pants of choiceOptions.pants)
@@ -318,4 +318,19 @@ for(const factor of [.72,1.28])for(const distance of [0,30000])for(const gap of 
   }
 }
 
-console.log(`OK: independent jewelry choices; drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);
+
+// Photo collection keeps jewelry styles independent and selects visible accessories.
+{
+  const f=fixture();
+  f.events['jewelry-chain:click']();assert.equal(f.run('characterChoice.chain'),false);
+  f.events['necklace-cross:click']();assert.equal(f.run('characterChoice.chain'),true);
+  f.events['earringStyle-cross:click']();f.events['braceletStyle-duo:click']();f.events['jewelry-grillz:click']();
+  const saved=JSON.parse(f.storage.get('beat-runner-character'));
+  assert.equal(saved.necklace,'cross');assert.equal(saved.earringStyle,'cross');assert.equal(saved.braceletStyle,'duo');assert.equal(saved.grillz,true);
+  for(const outfit of ['vetements','racer','blueflame','crown','vethood'])for(const view of ['front','profile'])
+    for(const necklace of ['luketa','cuban','cross','face'])for(const braceletStyle of ['none','cuban','tennis','duo']){
+      f.run(`drawDJ(ctx,{x:100,y:100,outfit:'${outfit}',view:'${view}',necklace:'${necklace}',braceletStyle:'${braceletStyle}',earringStyle:'cross',grillz:true,running:true,phase:4});`);
+    }
+}
+
+console.log(`OK: photo outfits and jewelry styles; independent jewelry choices; drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);
