@@ -29,7 +29,7 @@ function fixture({width=390,height=844,blockedStorage=false,cachedArt=false}={})
   assert.equal(run('characterChoice.hair'),'blond'); assert.equal(run('characterChoice.view'),'profile');
   assert.equal(run('characterChoice.outfit'),'white');
   events['hair-pink:click']();events['pants-camo:click']();events['outfit-orange:click']();events['shoes-nike:click']();
-  assert.deepEqual(JSON.parse(storage.get('beat-runner-character')),{outfit:'orange',hair:'pink',pants:'camo',shoes:'nike',view:'profile',chain:true,earrings:true,pantsAccessory:true,necklace:'luketa',earringStyle:'stud',braceletStyle:'cuban',grillz:false});
+  assert.deepEqual(JSON.parse(storage.get('beat-runner-character')),{outfit:'orange',hair:'pink',pants:'camo',shoes:'nike',view:'profile',chain:true,earrings:true,pantsAccessory:true,necklace:'luketa',earringStyle:'stud',braceletStyle:'cuban',grillz:false,grillzStyle:'iced'});
   assert.equal(element('hair-pink').attributes['aria-pressed'],'true');
   run("selectCharacter('hair','invalid');");assert.equal(run('characterChoice.hair'),'pink');
   run(`for(const outfit of choiceOptions.outfit) for(const hair of choiceOptions.hair) for(const pants of choiceOptions.pants)
@@ -333,4 +333,14 @@ for(const factor of [.72,1.28])for(const distance of [0,30000])for(const gap of 
     }
 }
 
-console.log(`OK: photo outfits and jewelry styles; independent jewelry choices; drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);
+
+{
+  const f=fixture();f.events['grillzStyle-gold:click']();f.events['earringStyle-hoopcross:click']();
+  assert.equal(f.run('characterChoice.grillz'),true);assert.equal(f.run('characterChoice.grillzStyle'),'gold');
+  assert.equal(f.run('characterChoice.earringStyle'),'hoopcross');
+  assert.equal(JSON.parse(f.storage.get('beat-runner-character')).grillzStyle,'gold');
+  for(const view of ['front','profile'])for(const grillzStyle of ['gold','iced'])
+    f.run(`drawDJ(ctx,{x:100,y:100,view:'${view}',grillz:true,grillzStyle:'${grillzStyle}',earringStyle:'hoopcross'});`);
+}
+
+console.log(`OK: gold grillz and hoop-cross earrings; photo outfits and jewelry styles; independent jewelry choices; drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);

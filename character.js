@@ -94,13 +94,15 @@ function drawNecklace(ctx,style,profile){
   if(style==='luketa'){ctx.fillStyle='#7e899e';ctx.fillRect(-15,18,30,10);ctx.fillStyle='#dce5f2';ctx.fillRect(-14,19,28,8);ctx.fillStyle='#ffffff';ctx.font='bold 6.4px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('LUKETA',0,23);}
   ctx.restore();
 }
-function drawCrossEarring(ctx,x,y){
-  ctx.save();ctx.fillStyle='#edf4ff';ctx.fillRect(x-.5,y,1,7);ctx.fillRect(x-2,y+3,4,1);ctx.restore();
+function drawCrossEarring(ctx,x,y,hoop=false){
+  if(hoop){ctx.save();ctx.strokeStyle='#dce9fc';ctx.lineWidth=.85;ctx.beginPath();ctx.ellipse(x,y+1,1.4,2,0,0,Math.PI*2);ctx.stroke();ctx.restore();y+=3;}
+  ctx.save();ctx.fillStyle='#edf4ff';ctx.fillRect(x-.5,y,1,7);ctx.fillRect(x-2,y+3,4,1);ctx.fillStyle='#ffffff';ctx.fillRect(x-.3,y+1,.6,.6);ctx.fillRect(x-.3,y+5,.6,.6);ctx.restore();
 }
-function drawGrillz(ctx,profile){
+function drawGrillz(ctx,profile,style='iced'){
   ctx.save();if(profile){ctx.translate(19,-27);ctx.scale(.45,1);}else ctx.translate(0,-26);
   ctx.fillStyle='#895a61';ctx.beginPath();ctx.ellipse(0,0,7,3.3,0,0,Math.PI*2);ctx.fill();
-  for(let row=0;row<2;row++)for(let i=0;i<6;i++){ctx.fillStyle=i%2?'#f7fbff':'#b8c9e0';ctx.fillRect(-5.8+i*1.9,-2+row*2,1.6,1.7);}
+  for(let row=0;row<2;row++)for(let i=0;i<6;i++){ctx.fillStyle=style==='gold'?'#dfb34a':i%2?'#f7fbff':'#b8c9e0';ctx.fillRect(-5.8+i*1.9,-2+row*2,1.6,1.7);}
+  if(style==='gold'){ctx.strokeStyle='#f5d97d';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(-5,-1.6);ctx.lineTo(5,-1.6);ctx.stroke();ctx.restore();return;}
   ctx.strokeStyle='#ffffff';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(-4,-3);ctx.lineTo(-4,0);ctx.moveTo(-5.5,-1.5);ctx.lineTo(-2.5,-1.5);ctx.stroke();ctx.restore();
 }
 
@@ -182,7 +184,7 @@ function drawShoes(ctx, shoes, x, y) {
   ctx.restore();
 }
 
-function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, chain=true, earrings=true, pantsAccessory=true, necklace='luketa', earringStyle='stud', braceletStyle='cuban', grillz=false, pose = 'idle' }) {
+function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, chain=true, earrings=true, pantsAccessory=true, necklace='luketa', earringStyle='stud', braceletStyle='cuban', grillz=false, grillzStyle='iced', pose = 'idle' }) {
   ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
@@ -272,7 +274,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   }
   oval(-6, -36, 4.8, 6.4, '#d29a80');
   line([[-8, -38], [-5, -40], [-3, -36], [-6, -33]], '#ae7b6b', 0.9);
-  if(earrings){if(earringStyle==='cross')drawCrossEarring(ctx,-5,-32);else{oval(-5, -31, 1.5, 1.5, '#edf3fc'); oval(-5.5, -31.6, 0.7, 0.7, '#ffffff');}}
+  if(earrings){if(earringStyle==='cross'||earringStyle==='hoopcross')drawCrossEarring(ctx,-5,-32,earringStyle==='hoopcross');else{oval(-5, -31, 1.5, 1.5, '#edf3fc'); oval(-5.5, -31.6, 0.7, 0.7, '#ffffff');}}
   line([[6, -45], [12, -46], [16, -44]], '#75624f', 2.3);
   oval(12, -40, 4.1, 2.2, '#f1e4d4'); oval(14, -40, 1.8, 2, '#88946b');
   oval(14.5, -40, 0.9, 1.4, '#303731'); oval(15, -40.7, 0.6, 0.6, '#ffffff');
@@ -280,7 +282,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   line([[18, -33], [21, -32.5]], '#a77564', 0.9);
   line([[17, -28], [21, -27], [18, -25.5]], '#b77978', 1.5);
   line([[17, -23], [15, -19], [9, -19]], '#796753', 2.2);
-  if(grillz)drawGrillz(ctx,true);
+  if(grillz)drawGrillz(ctx,true,grillzStyle);
   if (pose === 'hurt') {
     line([[8, -43], [12, -39], [16, -43]], '#675348', 1.4);
     oval(19, -44, 1.4, 2.7, '#a6d5e6');
@@ -288,8 +290,8 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   ctx.restore();
 }
 
-function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = false, outfit = 'black', pants = 'sparkle', shoes = 'sneakers', hair = 'blond', view = 'front', chain=true, earrings=true, pantsAccessory=true, necklace='luketa', earringStyle='stud', braceletStyle='cuban', grillz=false, pose = 'idle' }) {
-  if (view === 'profile') return drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, chain, earrings, pantsAccessory, necklace, earringStyle, braceletStyle, grillz, pose });
+function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = false, outfit = 'black', pants = 'sparkle', shoes = 'sneakers', hair = 'blond', view = 'front', chain=true, earrings=true, pantsAccessory=true, necklace='luketa', earringStyle='stud', braceletStyle='cuban', grillz=false, grillzStyle='iced', pose = 'idle' }) {
+  if (view === 'profile') return drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, chain, earrings, pantsAccessory, necklace, earringStyle, braceletStyle, grillz, grillzStyle, pose });
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
   const hoodie = ['neon','orange','crown','vethood'].includes(outfit);
   const longSleeves = hoodie || outfit === 'jeweled' || outfit === 'blueflame';
@@ -410,7 +412,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   oval(0, -26, 6.3, 2.5, '#bb7d7c');
   line([[-6, -26.5], [-2, -27], [0, -26.4], [2, -27], [6, -26.5]], '#955e60', 0.7);
   line([[-3, -24.7], [3, -24.7]], '#d99c96', 0.8);
-  if(grillz)drawGrillz(ctx,false);
+  if(grillz)drawGrillz(ctx,false,grillzStyle);
   if (pose === 'celebrate') {
     ctx.strokeStyle = '#8f6064'; ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.arc(0, -29, 6, 0.2, Math.PI - 0.2); ctx.stroke();
@@ -420,7 +422,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
     line([[4, -42], [8, -38], [13, -42]], '#675348', 1.4);
     oval(20, -43, 1.5, 2.7, '#a6d5e6');
   }
-  if(earrings && earringStyle==='cross'){drawCrossEarring(ctx,-21,-33);drawCrossEarring(ctx,21,-33);}
+  if(earrings && (earringStyle==='cross'||earringStyle==='hoopcross')){drawCrossEarring(ctx,-21,-33,earringStyle==='hoopcross');drawCrossEarring(ctx,21,-33,earringStyle==='hoopcross');}
   if(earrings && earringStyle==='stud'){
   oval(-21, -33, 1.4, 1.4, '#e4eaf4'); oval(21, -33, 2.2, 2.2, '#eee9e5');
   oval(-21.4, -33.5, 0.9, 0.9, '#ffffff');

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#080c18">
   <title>Beat Runner · LUKETA</title>
-  <link rel="stylesheet" href="style.css?v=20261121-photo-collection">
+  <link rel="stylesheet" href="style.css?v=20261121-grillz-hoop">
 </head>
 <body>
   <canvas id="game" tabindex="0" aria-label="Beat Runner: colete vinis, pendrives, diamantes, pulseiras de backstage e corações; pule caixas de som, cases e cabos. Espaço, seta para cima ou toque para pular; dois toques para pulo duplo."></canvas>
@@ -21,10 +21,11 @@
           <div class="choice-row hair-choices" role="group" aria-label="Cabelo"><span>CABELO</span><button id="hair-blond" type="button" aria-pressed="true">Loiro</button><button id="hair-pink" type="button" aria-pressed="false">Rosa</button><button id="hair-turquoise" type="button" aria-pressed="false">Turquesa</button><button id="hair-green" type="button" aria-pressed="false">Verde</button></div>
           <div class="choice-row" role="group" aria-label="Calça"><span>CALÇA</span><button id="pants-sparkle" type="button" aria-pressed="true">Com brilhos</button><button id="pants-plain" type="button" aria-pressed="false">Liso</button><button id="pants-camo" type="button" aria-pressed="false">Militar</button></div>
           <div class="choice-row" role="group" aria-label="Calçado"><span>CALÇADO</span><button id="shoes-sneakers" type="button" aria-pressed="true">Tênis</button><button id="shoes-boots" type="button" aria-pressed="false">Bota Timberland</button><button id="shoes-nike" type="button" aria-pressed="false">Nike branco</button></div>
-          <div class="choice-row catalog-row jewelry-row" role="group" aria-label="Joia"><span>JOIA</span><button id="jewelry-chain" type="button" aria-pressed="true" title="Colocar ou tirar a corrente">Corrente</button><button id="jewelry-earrings" type="button" aria-pressed="true" title="Colocar ou tirar os brincos">Brinco</button><button id="jewelry-pantsAccessory" type="button" aria-pressed="true" title="Colocar ou tirar o acessório da calça">Acessório de calça</button><button id="jewelry-grillz" type="button" aria-pressed="false">Grillz cravejado</button></div>
+          <div class="choice-row catalog-row jewelry-row" role="group" aria-label="Joia"><span>JOIA</span><button id="jewelry-chain" type="button" aria-pressed="true" title="Colocar ou tirar a corrente">Corrente</button><button id="jewelry-earrings" type="button" aria-pressed="true" title="Colocar ou tirar os brincos">Brinco</button><button id="jewelry-pantsAccessory" type="button" aria-pressed="true" title="Colocar ou tirar o acessório da calça">Acessório de calça</button><button id="jewelry-grillz" type="button" aria-pressed="false">Grillz</button></div>
           <div class="choice-row catalog-row necklace-row" role="group" aria-label="Modelo de corrente"><span>CORRENTE</span><button id="necklace-luketa" type="button" aria-pressed="true">LUKETA</button><button id="necklace-cuban" type="button" aria-pressed="false">Cuban cravejada</button><button id="necklace-cross" type="button" aria-pressed="false">Pingente cruz</button><button id="necklace-face" type="button" aria-pressed="false">Pingente rosto</button></div>
-          <div class="choice-row" role="group" aria-label="Modelo de brinco"><span>BRINCO</span><button id="earringStyle-stud" type="button" aria-pressed="true">Ponto de luz</button><button id="earringStyle-cross" type="button" aria-pressed="false">Cruz</button></div>
+          <div class="choice-row" role="group" aria-label="Modelo de brinco"><span>BRINCO</span><button id="earringStyle-stud" type="button" aria-pressed="true">Ponto de luz</button><button id="earringStyle-cross" type="button" aria-pressed="false">Cruz</button><button id="earringStyle-hoopcross" type="button" aria-pressed="false">Argolinha com cruz</button></div>
           <div class="choice-row catalog-row bracelet-row" role="group" aria-label="Modelo de pulseira"><span>PULSEIRA</span><button id="braceletStyle-none" type="button" aria-pressed="false">Sem pulseira</button><button id="braceletStyle-cuban" type="button" aria-pressed="true">Cuban</button><button id="braceletStyle-tennis" type="button" aria-pressed="false">Tennis</button><button id="braceletStyle-duo" type="button" aria-pressed="false">Dupla cravejada</button></div>
+          <div class="choice-row" role="group" aria-label="Modelo de grillz"><span>GRILLZ</span><button id="grillzStyle-iced" type="button" aria-pressed="true">Prata cravejado</button><button id="grillzStyle-gold" type="button" aria-pressed="false">Dourado liso</button></div>
           <div class="choice-row" role="group" aria-label="Ângulo durante a corrida"><span>CORRIDA</span><button id="view-front" type="button" aria-pressed="false">De frente</button><button id="view-profile" type="button" aria-pressed="true">De lado</button></div>
         </section>
         <div class="how-to"><span class="record-dot" aria-hidden="true">◎</span><p><strong>Vinis são para pegar.</strong> Caixas, cases e cabos são para pular. Oito vinis carregam um drop com proteção.</p></div>
@@ -59,8 +60,8 @@
   <section id="pause-screen" class="modal-screen" aria-label="Set em pausa" hidden><div class="result-card"><p class="eyebrow">O SOM ESPERA POR VOCÊ</p><h2>Set em pausa.</h2><button id="resume" class="primary" type="button">CONTINUAR O SET</button><button id="end-set" class="secondary" type="button">ENCERRAR E VER MEU SET</button></div></section>
   <div class="utility"><button id="pause" type="button" hidden>PAUSAR</button><button id="sound" type="button" aria-label="Silenciar áudio" aria-pressed="false">SOM ON</button></div>
   <audio id="music" loop preload="none"><source src="music.mp3" type="audio/mpeg"></audio>
-  <script src="character.js?v=20261121-photo-collection"></script>
-  <script src="stage-art.js?v=20261121-photo-collection"></script>
-  <script src="game.js?v=20261121-photo-collection"></script>
+  <script src="character.js?v=20261121-grillz-hoop"></script>
+  <script src="stage-art.js?v=20261121-grillz-hoop"></script>
+  <script src="game.js?v=20261121-grillz-hoop"></script>
 </body>
 </html>
