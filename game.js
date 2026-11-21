@@ -6,10 +6,12 @@ const el = id => { if (!uiNodes.has(id)) uiNodes.set(id,document.getElementById(
 const music = el('music');
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
 const choiceOptions = {outfit:['black','white','neon','orange','jeweled'],hair:['blond','pink','turquoise','green'],pants:['sparkle','plain','camo'],shoes:['sneakers','boots','nike'],view:['front','profile']};
-const characterChoice = {outfit:'black',hair:'blond',pants:'sparkle',shoes:'sneakers',view:'profile'};
+const characterChoice = {outfit:'black',hair:'blond',pants:'sparkle',shoes:'sneakers',view:'profile',chain:true,earrings:true,pantsAccessory:true};
 function readStored(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
 function saveStored(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
 const savedChoice = readStored('beat-runner-character', {});
+const jewelryKeys=['chain','earrings','pantsAccessory'];
+for(const key of jewelryKeys)if(typeof savedChoice?.[key]==='boolean')characterChoice[key]=savedChoice[key];
 for (const key of Object.keys(choiceOptions)) {
   if (key !== 'hair' && key !== 'view' && choiceOptions[key].includes(savedChoice?.[key])) characterChoice[key] = savedChoice[key];
 }
@@ -22,6 +24,15 @@ function selectCharacter(key, value) {
 for (const [key, values] of Object.entries(choiceOptions)) {
   for (const value of values) el(key + '-' + value).addEventListener('click', () => selectCharacter(key, value));
   selectCharacter(key, characterChoice[key]);
+}
+function toggleJewelry(key){
+  characterChoice[key]=!characterChoice[key];
+  el('jewelry-'+key).setAttribute('aria-pressed',String(characterChoice[key]));
+  saveStored('beat-runner-character',characterChoice);
+}
+for(const key of jewelryKeys){
+  el('jewelry-'+key).setAttribute('aria-pressed',String(characterChoice[key]));
+  el('jewelry-'+key).addEventListener('click',()=>toggleJewelry(key));
 }
 const STAGES = [
   {id:'studio',name:'ESTÚDIO',next:'PRIMEIRA PISTA',at:0,accent:'#81f7d4',sky:'#080f1b',grid:'#25413755',bpm:88,volume:0.24},

@@ -114,7 +114,7 @@ function drawShoes(ctx, shoes, x, y) {
   ctx.restore();
 }
 
-function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, pose = 'idle' }) {
+function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, chain=true, earrings=true, pantsAccessory=true, pose = 'idle' }) {
   ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
@@ -157,6 +157,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   if(outfit==='jeweled')drawJeweledFabric(ctx,-16,-13,32,38);
   line([[-13, 2], [-13, 24]], seam);
   line([[-13, 25], [13, 25]], seam);
+  if(pantsAccessory){ctx.strokeStyle='#aaa9b5';ctx.lineWidth=1.2;ctx.beginPath();ctx.ellipse(-9,27,5,10,-.2,0,Math.PI);ctx.stroke();}
   // Abstract ink stays on the neck and extends beneath the jaw.
   box(-7, -27, 17, 22, 4, '#d6a084');
   drawNeckTattoo(ctx, 1, -22, 0.7);
@@ -168,6 +169,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
     box(-19, -17, 13, 17, 6, hood);
     line([[-16, -14], [-14, -4], [-5, -3]], seam, 1.5);
   }
+  if(chain){
   // Silver chain hangs forward with a narrower nameplate at this angle.
   line([[8, -16], [14, -1], [16, 8]], '#b8c1d1', 2.2);
   line([[9, -15], [15, -1], [17, 7]], '#f1f4ff', 0.8);
@@ -175,6 +177,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   ctx.save(); ctx.translate(17.5, 10); ctx.scale(0.65, 1);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 5.6px Arial';
   ctx.fillStyle = '#ffffff'; ctx.fillText('LUKETA', 0, 0); ctx.restore();
+  }
   // Left arm faces the viewer in a right-facing profile.
   ctx.save(); ctx.translate(-7, -7); ctx.rotate(pose === 'celebrate' ? -1.65 : airborne ? -0.65 : -swing * 0.5);
   box(-5, 6, 10, 24, 4, longSleeves ? shirt : '#dfac8d');
@@ -206,7 +209,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   }
   oval(-6, -36, 4.8, 6.4, '#d29a80');
   line([[-8, -38], [-5, -40], [-3, -36], [-6, -33]], '#ae7b6b', 0.9);
-  oval(-5, -31, 1.5, 1.5, '#edf3fc'); oval(-5.5, -31.6, 0.7, 0.7, '#ffffff');
+  if(earrings){oval(-5, -31, 1.5, 1.5, '#edf3fc'); oval(-5.5, -31.6, 0.7, 0.7, '#ffffff');}
   line([[6, -45], [12, -46], [16, -44]], '#75624f', 2.3);
   oval(12, -40, 4.1, 2.2, '#f1e4d4'); oval(14, -40, 1.8, 2, '#88946b');
   oval(14.5, -40, 0.9, 1.4, '#303731'); oval(15, -40.7, 0.6, 0.6, '#ffffff');
@@ -221,8 +224,8 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   ctx.restore();
 }
 
-function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = false, outfit = 'black', pants = 'sparkle', shoes = 'sneakers', hair = 'blond', view = 'front', pose = 'idle' }) {
-  if (view === 'profile') return drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, pose });
+function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = false, outfit = 'black', pants = 'sparkle', shoes = 'sneakers', hair = 'blond', view = 'front', chain=true, earrings=true, pantsAccessory=true, pose = 'idle' }) {
+  if (view === 'profile') return drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, chain, earrings, pantsAccessory, pose });
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
   const hoodie = outfit === 'neon' || outfit === 'orange';
   const longSleeves = hoodie || outfit === 'jeweled';
@@ -271,9 +274,11 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   line([[-18, 1], [-18, 22]], seam, 1);
   line([[18, 1], [18, 22]], '#34353e', 1);
   line([[-18, 25], [18, 25]], seam, 1);
+  if(pantsAccessory){
   // Wallet chain.
   ctx.strokeStyle = '#aaa9b5'; ctx.lineWidth = 1.2;
   ctx.beginPath(); ctx.ellipse(15, 25, 7, 11, -0.25, 0, Math.PI); ctx.stroke();
+  }
   [-1, 1].forEach(side => {
     ctx.save(); ctx.translate(side * 22, -8);
     ctx.rotate(pose === 'celebrate' && side > 0 ? -2.1 : airborne ? side * -0.65 : -swing * side * 0.38);
@@ -305,6 +310,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
     ctx.strokeStyle = seam; ctx.lineWidth = 1.4;
     ctx.beginPath(); ctx.ellipse(0, -6, 10, 3, 0, 0, Math.PI); ctx.stroke();
   }
+  if(chain){
   ctx.strokeStyle = '#a8b1c1'; ctx.lineWidth = 2.7;
   ctx.beginPath(); ctx.moveTo(-10, -17); ctx.quadraticCurveTo(-15, 0, 0, 8);
   ctx.quadraticCurveTo(15, 0, 10, -17); ctx.stroke();
@@ -319,6 +325,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   ctx.fillText('LUKETA', 0, 11.4);
   ctx.fillStyle = '#ffffff'; ctx.fillText('LUKETA', 0, 10.8);
   sparkle(-12, 7.5, 1.4); sparkle(11, 13, 1.8); sparkle(3, 7, 1);
+  }
   // Ears and softly shaded face: a short blond crop, never a fringe.
   oval(-21, -36, 3.4, 6, '#cf957c'); oval(21, -36, 3.4, 6, '#e4b398');
   const skin = ctx.createLinearGradient(-20, -40, 21, -28);
@@ -361,7 +368,9 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
     line([[4, -42], [8, -38], [13, -42]], '#675348', 1.4);
     oval(20, -43, 1.5, 2.7, '#a6d5e6');
   }
+  if(earrings){
   oval(-21, -33, 1.4, 1.4, '#e4eaf4'); oval(21, -33, 2.2, 2.2, '#eee9e5');
   oval(-21.4, -33.5, 0.9, 0.9, '#ffffff');
+  }
   ctx.restore();
 }
