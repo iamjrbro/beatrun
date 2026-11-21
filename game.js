@@ -5,13 +5,13 @@ const uiNodes = new Map();
 const el = id => { if (!uiNodes.has(id)) uiNodes.set(id,document.getElementById(id)); return uiNodes.get(id); };
 const music = el('music');
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
-const choiceOptions = {outfit:['black','white','neon','orange','jeweled','vetements','racer','blueflame','crown','vethood','majestic'],hair:['blond','pink','turquoise','green'],haircut:['low','spiky'],pants:['sparkle','plain','camo','light'],shoes:['sneakers','boots','nike'],view:['front','profile'],necklace:['none','luketa','cuban','cubanGold','cross','face'],earringStyle:['stud','hoopcross'],braceletStyle:['none','cuban','cubanGold','tennis','duo'],grillzStyle:['iced','gold','icedLower']};
+const choiceOptions = {outfit:['black','white','neon','orange','jeweled','vetements','racer','blueflame','crown','vethood','majestic'],hair:['blond','pink','turquoise','green'],haircut:['low','spiky'],pants:['sparkle','plain','camo','light'],shoes:['sneakers','boots','nike'],view:['front','profile'],necklace:['none','luketa','cuban','cubanGold','cross','face'],earringStyle:['none','stud','hoopcross'],braceletStyle:['none','cuban','cubanGold','tennis','duo'],grillzStyle:['none','iced','gold','icedLower']};
 let menuPreviewView='front';
-const characterChoice = {outfit:'black',hair:'blond',haircut:'low',pants:'sparkle',shoes:'sneakers',view:'profile',chain:true,earrings:true,pantsAccessory:true,necklace:'luketa',earringStyle:'stud',braceletStyle:'cuban',grillz:false,grillzStyle:'iced'};
+const characterChoice = {outfit:'black',hair:'blond',haircut:'low',pants:'sparkle',shoes:'sneakers',view:'profile',chain:true,earrings:true,pantsAccessory:true,necklace:'luketa',earringStyle:'stud',braceletStyle:'cuban',grillz:false,grillzStyle:'none',airpods:false,macbook:false,microphone:false};
 function readStored(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
 function saveStored(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
 const savedChoice = readStored('beat-runner-character', {});
-const jewelryKeys=['earrings','pantsAccessory','grillz'];
+const jewelryKeys=['pantsAccessory','airpods','macbook','microphone'];
 for(const key of jewelryKeys)if(typeof savedChoice?.[key]==='boolean')characterChoice[key]=savedChoice[key];
 for (const key of Object.keys(choiceOptions)) {
   if (key !== 'hair' && key !== 'view' && choiceOptions[key].includes(savedChoice?.[key])) characterChoice[key] = savedChoice[key];
@@ -20,12 +20,16 @@ if(savedChoice?.earringStyle==='cross')characterChoice.earringStyle='hoopcross';
 // Migrate the old generic chain switch to the explicit no-necklace choice.
 if(savedChoice?.chain===false)characterChoice.necklace='none';
 characterChoice.chain=characterChoice.necklace!=='none';
+if(savedChoice?.earrings===false)characterChoice.earringStyle='none';
+if(savedChoice?.grillz===false)characterChoice.grillzStyle='none';
+characterChoice.earrings=characterChoice.earringStyle!=='none';
+characterChoice.grillz=characterChoice.grillzStyle!=='none';
 function selectCharacter(key, value) {
   if (!choiceOptions[key]?.includes(value)) return;
   characterChoice[key] = value;
   if(key==='necklace')characterChoice.chain=value!=='none';
   const jewelryToggle={earringStyle:'earrings',grillzStyle:'grillz'}[key];
-  if(jewelryToggle){characterChoice[jewelryToggle]=true;el('jewelry-'+jewelryToggle).setAttribute('aria-pressed','true');}
+  if(jewelryToggle)characterChoice[jewelryToggle]=value!=='none';
   for (const option of choiceOptions[key]) el(key + '-' + option).setAttribute('aria-pressed', String(option === value));
   saveStored('beat-runner-character', characterChoice);
   if((key==='hair'||key==='haircut')&&typeof refreshWardrobeHairThumbnails==='function')refreshWardrobeHairThumbnails();
