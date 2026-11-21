@@ -5,6 +5,7 @@ function characterColors(outfit, hair) {
     white: ['#f4f3ef', '#bfc1c1', '#dedfdb'],
     neon: ['#c1ef35', '#789b24', '#addb2e'],
     orange: ['#ff7625', '#b54512', '#e85d17'],
+    jeweled: ['#123d32', '#28594a', '#123d32'],
   };
   const [shirt, seam, hood] = shirts[outfit] || shirts.black;
   const hairPalette = {
@@ -15,6 +16,30 @@ function characterColors(outfit, hair) {
   };
   const [hairBase, hairLight, hairHighlight, hairShadow] = hairPalette[hair] || hairPalette.blond;
   return { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow };
+}
+
+// Forest-green crewneck with dark tonal print and small floral rhinestone clusters.
+function drawJeweledFabric(ctx,x,y,w,h) {
+  ctx.save();ctx.beginPath();ctx.roundRect(x,y,w,h,4);ctx.clip();
+  ctx.strokeStyle='#082a23';ctx.lineWidth=1.5;
+  for(let row=0;row<2;row++){
+    ctx.beginPath();ctx.moveTo(x+w*.12,y+h*(.52+row*.21));
+    ctx.bezierCurveTo(x+w*.35,y+h*(.25+row*.2),x+w*.55,y+h*(.8+row*.1),x+w*.87,y+h*(.48+row*.21));ctx.stroke();
+  }
+  for(let i=0;i<5;i++){
+    const cx=x+w*(.16+(i*37%68)/100),cy=y+h*(.18+(i*23%67)/100);
+    for(let petal=0;petal<4;petal++){
+      const angle=petal*Math.PI/2+.4;
+      ctx.fillStyle=petal%2?'#d4cbae':'#e0e9e5';
+      ctx.beginPath();ctx.ellipse(cx+Math.cos(angle)*2,cy+Math.sin(angle)*2,.7,1.5,angle-Math.PI/2,0,Math.PI*2);ctx.fill();
+    }
+    ctx.fillStyle='#fff9df';ctx.fillRect(cx-.45,cy-.45,.9,.9);
+  }
+  for(let i=0;i<15;i++){
+    const px=x+2+(i*13%Math.max(1,w-4)),py=y+2+(i*19%Math.max(1,h-4));
+    ctx.fillStyle=i%3?'#b9c6bc':'#e4dcc6';ctx.fillRect(px,py,.7,.9);
+  }
+  ctx.restore();
 }
 
 function drawCamouflage(ctx, x, y, w, h) {
@@ -94,6 +119,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
   const hoodie = outfit === 'neon' || outfit === 'orange';
+  const longSleeves = hoodie || outfit === 'jeweled';
   const box = (x, y, w, h, r, color) => {
     ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill();
   };
@@ -121,12 +147,14 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   });
   // Right arm on the far side: bracelet follows that wrist in profile as well.
   ctx.save(); ctx.translate(8, -7); ctx.rotate(airborne ? -0.7 : -0.45 + swing * 0.5);
-  box(-4, 6, 9, 24, 4, hoodie ? shirt : '#cf997e');
+  box(-4, 6, 9, 24, 4, longSleeves ? shirt : '#cf997e');
   box(-6, -3, 12, 16, 4, shirt);
+  if(outfit==='jeweled')drawJeweledFabric(ctx,-4,1,8,24);
   oval(0, 29, 5, 6, '#cf997e');
   drawBracelet(ctx, 0, 25);
   ctx.restore();
   box(-17, -15, 34, 42, 9, shirt);
+  if(outfit==='jeweled')drawJeweledFabric(ctx,-16,-13,32,38);
   line([[-13, 2], [-13, 24]], seam);
   line([[-13, 25], [13, 25]], seam);
   // Abstract ink stays on the neck and extends beneath the jaw.
@@ -134,6 +162,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   drawNeckTattoo(ctx, 1, -22, 0.7);
   line([[-5, -23], [-2, -16], [-5, -10]], '#595057', 1.2);
   if (outfit === 'black') line([[-4, -10], [6, -4], [12, -10]], seam, 2);
+  if (outfit === 'jeweled') line([[-6,-9],[3,-6],[12,-10]],seam,2);
   if (outfit === 'white') line([[-6, -8], [3, -5], [12, -9]], seam, 1.2);
   if (hoodie) {
     box(-19, -17, 13, 17, 6, hood);
@@ -148,9 +177,10 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   ctx.fillStyle = '#ffffff'; ctx.fillText('LUKETA', 0, 0); ctx.restore();
   // Left arm faces the viewer in a right-facing profile.
   ctx.save(); ctx.translate(-7, -7); ctx.rotate(pose === 'celebrate' ? -1.65 : airborne ? -0.65 : -swing * 0.5);
-  box(-5, 6, 10, 24, 4, hoodie ? shirt : '#dfac8d');
+  box(-5, 6, 10, 24, 4, longSleeves ? shirt : '#dfac8d');
   box(-7, -3, 14, 16, 4, shirt); line([[-6, 11], [6, 11]], seam);
-  if (!hoodie) line([[-3, 16], [2, 19], [-2, 23]], '#6a6369', 1.2);
+  if(outfit==='jeweled'){drawJeweledFabric(ctx,-5,1,10,24);line([[-4,26],[4,26]],seam,2);}
+  if (!longSleeves) line([[-3, 16], [2, 19], [-2, 23]], '#6a6369', 1.2);
   oval(0, 29, 5, 6, '#dfac8d');
   ctx.restore();
   // Side silhouette with short crop, forehead, defined nose, lips and rounded chin.
@@ -195,6 +225,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   if (view === 'profile') return drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, pose });
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
   const hoodie = outfit === 'neon' || outfit === 'orange';
+  const longSleeves = hoodie || outfit === 'jeweled';
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
@@ -236,6 +267,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   });
   // Plain black short-sleeve polo, with a folded collar and button placket.
   shape(-23, -15, 46, 42, 10, shirt);
+  if(outfit==='jeweled')drawJeweledFabric(ctx,-21,-13,42,38);
   line([[-18, 1], [-18, 22]], seam, 1);
   line([[18, 1], [18, 22]], '#34353e', 1);
   line([[-18, 25], [18, 25]], seam, 1);
@@ -245,11 +277,12 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   [-1, 1].forEach(side => {
     ctx.save(); ctx.translate(side * 22, -8);
     ctx.rotate(pose === 'celebrate' && side > 0 ? -2.1 : airborne ? side * -0.65 : -swing * side * 0.38);
-    shape(-5, 7, 10, 22, 4, hoodie ? shirt : '#dfac8d');
+    shape(-5, 7, 10, 22, 4, longSleeves ? shirt : '#dfac8d');
     shape(-7, -2, 14, 15, 4, shirt);
+    if(outfit==='jeweled'){drawJeweledFabric(ctx,-5,1,10,24);line([[-4,26],[4,26]],seam,2);}
     line([[-6, 11], [6, 11]], seam);
     // Stylized ink on the visible forearms.
-    if (!hoodie) line([[-3, 16], [2, 18], [-2, 21], [3, 23]], '#777177', 1.1);
+    if (!longSleeves) line([[-3, 16], [2, 18], [-2, 21], [3, 23]], '#777177', 1.1);
     oval(0, 28, 5.7, 6.2, '#dfac8d');
     line([[-3, 26], [1, 30], [3, 26]], '#67646b', 1.3);
     // Front view: his anatomical right wrist is on the viewer's left.
@@ -268,7 +301,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
     line([[-13, -13], [-17, -5], [-7, -2], [0, -5], [7, -2], [17, -5], [13, -13]], seam, 2.5);
     line([[-5, -2], [-6, 9]], '#e8f8be', 1); line([[5, -2], [6, 9]], '#e8f8be', 1);
   } else {
-    // Plain white crew neck: no collar, buttons or print.
+    // Crew neck for the plain white shirt and the jeweled green sweatshirt.
     ctx.strokeStyle = seam; ctx.lineWidth = 1.4;
     ctx.beginPath(); ctx.ellipse(0, -6, 10, 3, 0, 0, Math.PI); ctx.stroke();
   }
