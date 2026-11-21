@@ -29,7 +29,7 @@ function fixture({width=390,height=844,blockedStorage=false,cachedArt=false}={})
   assert.equal(run('characterChoice.hair'),'blond'); assert.equal(run('characterChoice.view'),'profile');
   assert.equal(run('characterChoice.outfit'),'white');
   events['hair-pink:click']();events['pants-camo:click']();events['outfit-orange:click']();events['shoes-nike:click']();
-  assert.deepEqual(JSON.parse(storage.get('beat-runner-character')),{outfit:'orange',hair:'pink',pants:'camo',shoes:'nike',view:'profile',chain:true,earrings:true,pantsAccessory:true,necklace:'luketa',earringStyle:'stud',braceletStyle:'cuban',grillz:false,grillzStyle:'iced'});
+  assert.deepEqual(JSON.parse(storage.get('beat-runner-character')),{outfit:'orange',hair:'pink',haircut:'low',pants:'camo',shoes:'nike',view:'profile',chain:true,earrings:true,pantsAccessory:true,necklace:'luketa',earringStyle:'stud',braceletStyle:'cuban',grillz:false,grillzStyle:'iced'});
   assert.equal(element('hair-pink').attributes['aria-pressed'],'true');
   run("selectCharacter('hair','invalid');");assert.equal(run('characterChoice.hair'),'pink');
   run(`for(const outfit of choiceOptions.outfit) for(const hair of choiceOptions.hair) for(const pants of choiceOptions.pants)
@@ -380,4 +380,32 @@ for(const factor of [.72,1.28])for(const distance of [0,30000])for(const gap of 
   assert.equal(f.run('characterChoice.view'),'profile');assert.equal(f.run('characterChoice.outfit'),'vetements');
 }
 
-console.log(`OK: compact fitting tabs, thumbnails and separate portrait angle; direct necklace choices, no pendant plate and light baggy jeans; gold grillz and hoop-cross earrings; photo outfits and jewelry styles; independent jewelry choices; drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);
+
+// Haircut and color are independent and every combination renders in both views.
+{
+  const f=fixture();assert.equal(f.run('characterChoice.haircut'),'low');
+  f.events['haircut-spiky:click']();
+  for(const hair of ['blond','pink','turquoise','green']){
+    f.events['hair-'+hair+':click']();assert.equal(f.run('characterChoice.haircut'),'spiky');
+    for(const haircut of ['low','spiky'])for(const view of ['front','profile'])
+      f.run(`drawDJ(ctx,{x:100,y:100,hair:'${hair}',haircut:'${haircut}',view:'${view}',outfit:'majestic'});`);
+  }
+  assert.equal(JSON.parse(f.storage.get('beat-runner-character')).haircut,'spiky');
+  f.events['tab-hair:click']();f.events['filter-haircolors:click']();
+  assert.equal(f.element('filter-panel-haircuts').hidden,true);
+  f.events['outfit-majestic:click']();f.events['play:click']();
+  assert.equal(f.run('characterChoice.outfit'),'majestic');assert.equal(f.run('characterChoice.haircut'),'spiky');
+  for(const id of ['haircut-low','haircut-spiky','hair-pink','outfit-majestic'])f.run(`drawWardrobeThumbnail(el('game'),'${id}');`);
+}
+
+
+{
+  const f=fixture();f.events['braceletStyle-cubanGold:click']();f.events['grillzStyle-icedLower:click']();
+  assert.equal(f.run('characterChoice.braceletStyle'),'cubanGold');assert.equal(f.run('characterChoice.grillzStyle'),'icedLower');
+  assert.equal(f.run('characterChoice.grillz'),true);
+  for(const view of ['front','profile'])for(const earringStyle of ['stud','hoopcross'])
+    f.run(`drawDJ(ctx,{x:100,y:100,view:'${view}',earringStyle:'${earringStyle}',braceletStyle:'cubanGold',grillz:true,grillzStyle:'icedLower',haircut:'spiky'});`);
+  for(const id of ['braceletStyle-cubanGold','grillzStyle-icedLower','earringStyle-stud','earringStyle-hoopcross'])f.run(`drawWardrobeThumbnail(el('game'),'${id}');`);
+}
+
+console.log(`OK: diamond earrings, gold bracelet and lower-only grillz; independent cuts and colors, Majestic shirt; compact fitting tabs, thumbnails and separate portrait angle; direct necklace choices, no pendant plate and light baggy jeans; gold grillz and hoop-cross earrings; photo outfits and jewelry styles; independent jewelry choices; drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);

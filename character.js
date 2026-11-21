@@ -8,6 +8,7 @@ function characterColors(outfit, hair) {
     jeweled: ['#123d32', '#28594a', '#123d32'],
     vetements: ['#171820','#3e414b','#171820'],
     racer: ['#f0eee3','#c4c2b6','#e5e2d5'],
+    majestic: ['#f5f1e9','#c5c7cc','#e8e4df'],
     blueflame: ['#171b26','#3c4659','#171b26'],
     crown: ['#21232c','#555562','#181b24'],
     vethood: ['#171820','#41434d','#13151d'],
@@ -24,6 +25,20 @@ function characterColors(outfit, hair) {
 }
 
 // Forest-green crewneck with dark tonal print and small floral rhinestone clusters.
+function drawSpikedHair(ctx,hair,profile){
+  const {hairBase,hairLight,hairHighlight,hairShadow}=characterColors('black',hair);
+  const points=profile?[[-18,-48],[-18,-59],[-15,-64],[-11,-62],[-7,-67],[-3,-63],[2,-68],[6,-63],[11,-66],[14,-62],[18,-63],[19,-53],[12,-51],[5,-50],[-4,-46]]
+    :[[-21,-50],[-20,-59],[-17,-64],[-14,-62],[-10,-67],[-6,-63],[-1,-68],[3,-63],[8,-67],[11,-62],[17,-65],[20,-59],[21,-50],[12,-49],[0,-50],[-12,-49]];
+  ctx.save();ctx.fillStyle=hairBase;ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fill();
+  ctx.lineCap='round';
+  for(let i=0;i<13;i++){
+    const x=-16+i*2.6,tip=(i<2||i>10?-61:-64)-(i*5%3);
+    ctx.strokeStyle=i%3?hairLight:hairShadow;ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(x,-53-(i%3));ctx.quadraticCurveTo(x-1,-59,x+1,tip);ctx.stroke();
+    if(i%2===0){ctx.strokeStyle=hairHighlight;ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(x,-58);ctx.lineTo(x+.6,tip+2);ctx.stroke();}
+  }
+  ctx.restore();
+}
+
 function drawJeweledFabric(ctx,x,y,w,h) {
   ctx.save();ctx.beginPath();ctx.roundRect(x,y,w,h,4);ctx.clip();
   ctx.strokeStyle='#082a23';ctx.lineWidth=1.5;
@@ -48,12 +63,26 @@ function drawJeweledFabric(ctx,x,y,w,h) {
 }
 
 function drawPhotoPrint(ctx,outfit,x,y,w,h){
-  if(!['vetements','racer','blueflame','crown','vethood'].includes(outfit))return;
+  if(!['vetements','racer','blueflame','crown','vethood','majestic'].includes(outfit))return;
   ctx.save();ctx.translate(x,y);ctx.scale(w/40,h/36);ctx.beginPath();ctx.rect(0,0,40,36);ctx.clip();
   const text=(value,yy,color,size=5)=>{ctx.fillStyle=color;ctx.font=`bold ${size}px Arial`;ctx.textAlign='center';ctx.fillText(value,20,yy,37);};
   if(outfit==='vetements'||outfit==='vethood'){
     text('VETEMENTS',12,outfit==='vetements'?'#e2e4e9':'#64646f',5);
     if(outfit==='vetements')for(let i=0;i<20;i++){ctx.fillStyle='#fff';ctx.fillRect(3+i*7%34,8+i%4,.45,.45);}
+  }else if(outfit==='majestic'){
+    ctx.textAlign='center';ctx.font='bold 6.5px Georgia';ctx.strokeStyle='#d7b84e';ctx.lineWidth=.7;
+    ctx.strokeText('Majestic',20,7,37);ctx.fillStyle='#367ec9';ctx.fillText('Majestic',20,7,37);
+    for(let i=0;i<20;i++){ctx.strokeStyle=i%2?'#afc9df':'#dae1e9';ctx.lineWidth=.45;ctx.beginPath();ctx.moveTo(i*13%40,10+i*7%21);ctx.lineTo(i*13%40+2,13+i*7%21);ctx.stroke();}
+    for(const [px,py,size]of [[7,18,.8],[20,13,1],[33,19,.8]]){
+      ctx.save();ctx.translate(px,py);ctx.scale(size,size);
+      // Blue-cloaked skeleton cowboys and orange horses recall the reference print.
+      ctx.fillStyle='#b77c32';ctx.beginPath();ctx.ellipse(0,1,5,1.2,-.15,0,Math.PI*2);ctx.fill();ctx.fillRect(-2,-1,4,2);
+      ctx.fillStyle='#e9e1c9';ctx.beginPath();ctx.arc(0,3,1.7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#253948';ctx.fillRect(-1,2.5,.65,.65);ctx.fillRect(.4,2.5,.65,.65);
+      ctx.fillStyle='#2c77bb';ctx.beginPath();ctx.moveTo(-3,5);ctx.lineTo(3,5);ctx.lineTo(5,15);ctx.lineTo(-4,15);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='#e3e7dc';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(0,6);ctx.lineTo(0,13);for(let r=0;r<4;r++){ctx.moveTo(-2,7+r*1.5);ctx.lineTo(2,7+r*1.5);}ctx.stroke();
+      ctx.fillStyle='#c96d38';ctx.beginPath();ctx.ellipse(1,19,5,5,-.3,0,Math.PI*2);ctx.fill();ctx.fillRect(-4,13,3,6);ctx.fillStyle='#252c36';ctx.fillRect(-4,13,1,7);
+      ctx.strokeStyle='#edbd5a';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(-1,17);ctx.lineTo(2,22);ctx.moveTo(-2,22);ctx.lineTo(-3,28);ctx.moveTo(4,22);ctx.lineTo(5,28);ctx.stroke();ctx.restore();
+    }
   }else if(outfit==='racer'){
     text('GALLERY',7,'#757a80',6);text('RACING',34,'#757a80',6);
     ctx.strokeStyle='#717982';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(7,14);ctx.bezierCurveTo(34,5,38,18,12,25);ctx.bezierCurveTo(7,22,26,19,30,14);ctx.stroke();
@@ -107,16 +136,29 @@ function drawNecklace(ctx,style,profile){
   }
   ctx.restore();
 }
+function drawDiamondStud(ctx,x,y,size=1.8){
+  ctx.save();ctx.translate(x,y);ctx.fillStyle='#8f9eb6';ctx.beginPath();ctx.arc(0,0,size+.3,0,Math.PI*2);ctx.fill();
+  for(let i=0;i<6;i++){const t=i*Math.PI/3;ctx.fillStyle=i%2?'#ffffff':'#c2d9ef';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(t)*size,Math.sin(t)*size);ctx.lineTo(Math.cos(t+Math.PI/3)*size,Math.sin(t+Math.PI/3)*size);ctx.closePath();ctx.fill();}
+  ctx.strokeStyle='#ffffff';ctx.lineWidth=.4;ctx.beginPath();ctx.moveTo(-size-.6,0);ctx.lineTo(size+.6,0);ctx.moveTo(0,-size-.6);ctx.lineTo(0,size+.6);ctx.stroke();ctx.restore();
+}
 function drawCrossEarring(ctx,x,y,hoop=false){
-  if(hoop){ctx.save();ctx.strokeStyle='#dce9fc';ctx.lineWidth=.85;ctx.beginPath();ctx.ellipse(x,y+1,1.4,2,0,0,Math.PI*2);ctx.stroke();ctx.restore();y+=3;}
-  ctx.save();ctx.fillStyle='#edf4ff';ctx.fillRect(x-.5,y,1,7);ctx.fillRect(x-2,y+3,4,1);ctx.fillStyle='#ffffff';ctx.fillRect(x-.3,y+1,.6,.6);ctx.fillRect(x-.3,y+5,.6,.6);ctx.restore();
+  ctx.save();
+  if(hoop){ctx.strokeStyle='#a7bbd4';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(x,y+1,1.4,2,0,0,Math.PI*2);ctx.stroke();for(let i=0;i<8;i++){const t=i*Math.PI/4;drawDiamondStud(ctx,x+Math.cos(t)*1.4,y+1+Math.sin(t)*2,.28);}y+=3;}
+  ctx.fillStyle='#cedbec';ctx.fillRect(x-.6,y,1.2,7);ctx.fillRect(x-2,y+3,4,1.2);
+  for(let i=0;i<5;i++)drawDiamondStud(ctx,x,y+.8+i*1.2,.35);
+  drawDiamondStud(ctx,x-1.4,y+3.5,.35);drawDiamondStud(ctx,x+1.4,y+3.5,.35);ctx.restore();
 }
 function drawGrillz(ctx,profile,style='iced'){
   ctx.save();if(profile){ctx.translate(19,-27);ctx.scale(.45,1);}else ctx.translate(0,-26);
   ctx.fillStyle='#895a61';ctx.beginPath();ctx.ellipse(0,0,7,3.3,0,0,Math.PI*2);ctx.fill();
-  for(let row=0;row<2;row++)for(let i=0;i<6;i++){ctx.fillStyle=style==='gold'?'#dfb34a':i%2?'#f7fbff':'#b8c9e0';ctx.fillRect(-5.8+i*1.9,-2+row*2,1.6,1.7);}
+  for(let row=0;row<2;row++)for(let i=0;i<6;i++){
+    ctx.fillStyle=style==='gold'?'#dfb34a':style==='icedLower'&&row===0?'#f4e6d5':i%2?'#f7fbff':'#b8c9e0';
+    ctx.fillRect(-5.8+i*1.9,-2+row*2,1.6,1.7);
+    if(style!=='gold'&&(style!=='icedLower'||row===1)){ctx.fillStyle='#ffffff';ctx.fillRect(-5.4+i*1.9,-1.6+row*2,.4,.4);}
+  }
   if(style==='gold'){ctx.strokeStyle='#f5d97d';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(-5,-1.6);ctx.lineTo(5,-1.6);ctx.stroke();ctx.restore();return;}
-  ctx.strokeStyle='#ffffff';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(-4,-3);ctx.lineTo(-4,0);ctx.moveTo(-5.5,-1.5);ctx.lineTo(-2.5,-1.5);ctx.stroke();ctx.restore();
+  const sparkleY=style==='icedLower'?.9:-1.5;
+  ctx.strokeStyle='#ffffff';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(-4,sparkleY-1.3);ctx.lineTo(-4,sparkleY+1.3);ctx.moveTo(-5.3,sparkleY);ctx.lineTo(-2.7,sparkleY);ctx.stroke();ctx.restore();
 }
 
 function drawDenimWash(ctx,x,y,w,h){
@@ -163,10 +205,11 @@ function drawBracelet(ctx, x, y, style='cuban') {
     for(let row=0;row<(style==='duo'?2:1);row++)for(let i=0;i<7;i++){ctx.fillStyle='#dae7fa';ctx.beginPath();ctx.roundRect(-6+i*1.8,-2+row*3,1.5,2,style==='duo'&&row?0:.6);ctx.fill();}
     ctx.restore();return;
   }
+  const gold=style==='cubanGold';
   ctx.save(); ctx.translate(x, y);
-  ctx.fillStyle = '#939eaf'; ctx.beginPath(); ctx.roundRect(-6, -2, 12, 5, 1.5); ctx.fill();
+  ctx.fillStyle = gold?'#b88b37':'#939eaf'; ctx.beginPath(); ctx.roundRect(-6, -2, 12, 5, 1.5); ctx.fill();
   for (let i = -4; i <= 4; i += 2) {
-    ctx.fillStyle = '#e8effb'; ctx.beginPath(); ctx.ellipse(i, 0.5, 1.4, 1.7, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = gold?'#efd389':'#e8effb'; ctx.beginPath(); ctx.ellipse(i, 0.5, 1.4, 1.7, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(i, 0, 0.6, 0, Math.PI * 2); ctx.fill();
   }
   ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 0.7;
@@ -206,7 +249,7 @@ function drawShoes(ctx, shoes, x, y) {
   ctx.restore();
 }
 
-function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, chain=true, earrings=true, pantsAccessory=true, necklace='luketa', earringStyle='stud', braceletStyle='cuban', grillz=false, grillzStyle='iced', pose = 'idle' }) {
+function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, chain=true, earrings=true, pantsAccessory=true, haircut='low', necklace='luketa', earringStyle='stud', braceletStyle='cuban', grillz=false, grillzStyle='iced', pose = 'idle' }) {
   ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
@@ -295,9 +338,10 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
     const px = -12 + (i * 7 % 25), py = -59 + (i * 3 % 7);
     line([[px, py + 1.5], [px + 1.2, py]], i % 3 ? hairHighlight : hairShadow, 0.8);
   }
+  if(haircut==='spiky')drawSpikedHair(ctx,hair,true);
   oval(-6, -36, 4.8, 6.4, '#d29a80');
   line([[-8, -38], [-5, -40], [-3, -36], [-6, -33]], '#ae7b6b', 0.9);
-  if(earrings){if(earringStyle==='cross'||earringStyle==='hoopcross')drawCrossEarring(ctx,-5,-32,earringStyle==='hoopcross');else{oval(-5, -31, 1.5, 1.5, '#edf3fc'); oval(-5.5, -31.6, 0.7, 0.7, '#ffffff');}}
+  if(earrings){if(earringStyle==='cross'||earringStyle==='hoopcross')drawCrossEarring(ctx,-5,-32,earringStyle==='hoopcross');else drawDiamondStud(ctx,-5,-31,1.6);}
   line([[6, -45], [12, -46], [16, -44]], '#75624f', 2.3);
   oval(12, -40, 4.1, 2.2, '#f1e4d4'); oval(14, -40, 1.8, 2, '#88946b');
   oval(14.5, -40, 0.9, 1.4, '#303731'); oval(15, -40.7, 0.6, 0.6, '#ffffff');
@@ -313,8 +357,8 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   ctx.restore();
 }
 
-function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = false, outfit = 'black', pants = 'sparkle', shoes = 'sneakers', hair = 'blond', view = 'front', chain=true, earrings=true, pantsAccessory=true, necklace='luketa', earringStyle='stud', braceletStyle='cuban', grillz=false, grillzStyle='iced', pose = 'idle' }) {
-  if (view === 'profile') return drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, chain, earrings, pantsAccessory, necklace, earringStyle, braceletStyle, grillz, grillzStyle, pose });
+function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = false, outfit = 'black', pants = 'sparkle', shoes = 'sneakers', hair = 'blond', view = 'front', chain=true, earrings=true, pantsAccessory=true, haircut='low', necklace='luketa', earringStyle='stud', braceletStyle='cuban', grillz=false, grillzStyle='iced', pose = 'idle' }) {
+  if (view === 'profile') return drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, chain, earrings, pantsAccessory, haircut, necklace, earringStyle, braceletStyle, grillz, grillzStyle, pose });
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
   const hoodie = ['neon','orange','crown','vethood'].includes(outfit);
   const longSleeves = hoodie || outfit === 'jeweled' || outfit === 'blueflame';
@@ -417,6 +461,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
     const x = -15 + (i * 7 % 30), y = -60 + (i * 3 % 8);
     line([[x, y + 2], [x + 1.6, y]], i % 3 ? hairHighlight : hairShadow, 0.9);
   }
+  if(haircut==='spiky')drawSpikedHair(ctx,hair,false);
   // Strong brows, green irises, small highlights.
   [-1, 1].forEach(side => {
     const ex = side * 8.5;
@@ -448,8 +493,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   }
   if(earrings && (earringStyle==='cross'||earringStyle==='hoopcross')){drawCrossEarring(ctx,-21,-33,earringStyle==='hoopcross');drawCrossEarring(ctx,21,-33,earringStyle==='hoopcross');}
   if(earrings && earringStyle==='stud'){
-  oval(-21, -33, 1.4, 1.4, '#e4eaf4'); oval(21, -33, 2.2, 2.2, '#eee9e5');
-  oval(-21.4, -33.5, 0.9, 0.9, '#ffffff');
+  drawDiamondStud(ctx,-21,-33,1.6);drawDiamondStud(ctx,21,-33,1.8);
   }
   ctx.restore();
 }

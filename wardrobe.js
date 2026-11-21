@@ -25,17 +25,18 @@ function bindWardrobeTabs(ids,prefix,panelPrefix){
 }
 bindWardrobeTabs(['clothes','hair','pants','shoes','jewels'],'tab-','wardrobe-panel-');
 bindWardrobeTabs(['blouses','hoodies'],'filter-','filter-panel-');
+bindWardrobeTabs(['haircuts','haircolors'],'filter-','filter-panel-');
 bindWardrobeTabs(['necklaces','earrings','bracelets','extras'],'filter-','filter-panel-');
 for(const view of ['front','profile'])el('portrait-'+view).addEventListener('click',()=>{
   menuPreviewView=view;
   for(const other of ['front','profile'])el('portrait-'+other).setAttribute('aria-pressed',String(other===view));
 });
 function drawWardrobeThumbnail(surface,id){
-  const paint=surface.getContext('2d');if(!paint)return;
+  const paint=surface.getContext('2d');if(!paint)return;paint.clearRect(0,0,surface.width,surface.height);
   const separator=id.indexOf('-'),key=id.slice(0,separator),value=id.slice(separator+1);
   const look={x:64,y:32,scale:1.8,outfit:'black',hair:'blond',pants:'plain',shoes:'sneakers',view:'front',chain:false,earrings:false,pantsAccessory:false,braceletStyle:'none'};
   if(key==='outfit'){look.outfit=value;drawDJ(paint,look);return;}
-  if(key==='hair'){drawDJ(paint,{...look,hair:value,y:120,scale:1.8});return;}
+  if(key==='hair'||key==='haircut'){drawDJ(paint,{...look,hair:key==='hair'?value:characterChoice.hair,haircut:key==='haircut'?value:characterChoice.haircut,y:123,scale:1.7});return;}
   if(key==='pants'){drawDJ(paint,{...look,pants:value,y:-33});return;}
   paint.save();
   if(key==='shoes'){paint.translate(39,28);paint.scale(2,2);drawShoes(paint,value,0,0);}
@@ -48,9 +49,9 @@ function drawWardrobeThumbnail(surface,id){
   }else if(key==='earringStyle'||(key==='jewelry'&&value==='earrings')){
     paint.translate(64,25);paint.scale(3,3);
     if(value==='hoopcross')drawCrossEarring(paint,0,0,true);
-    else{paint.fillStyle='#dce9fc';paint.beginPath();paint.arc(0,5,3,0,Math.PI*2);paint.fill();paint.fillStyle='#fff';paint.fillRect(-1,3,2,2);}
+    else drawDiamondStud(paint,0,5,3);
   }else if(key==='grillzStyle'||(key==='jewelry'&&value==='grillz')){
-    paint.translate(64,122);paint.scale(3,3);drawGrillz(paint,false,value==='gold'?'gold':'iced');
+    paint.translate(64,122);paint.scale(3,3);drawGrillz(paint,false,key==='grillzStyle'?value:'iced');
   }else if(key==='jewelry'&&value==='pantsAccessory'){
     paint.strokeStyle='#ced9eb';paint.lineWidth=3;paint.beginPath();paint.ellipse(64,33,27,24,0,0,Math.PI);paint.stroke();
     paint.fillStyle='#eff5ff';paint.fillRect(35,27,6,7);paint.fillRect(88,27,6,7);
@@ -61,3 +62,7 @@ function drawEmptyWardrobeChoice(paint){
   paint.strokeStyle='#869b9c';paint.lineWidth=2;paint.beginPath();paint.arc(64,43,16,0,Math.PI*2);paint.moveTo(53,54);paint.lineTo(75,32);paint.stroke();
 }
 for(const surface of document.querySelectorAll?.('canvas[data-preview]')||[])drawWardrobeThumbnail(surface,surface.dataset.preview);
+
+function refreshWardrobeHairThumbnails(){
+  for(const surface of document.querySelectorAll?.('canvas[data-preview^="hair-"] , canvas[data-preview^="haircut-"]')||[])drawWardrobeThumbnail(surface,surface.dataset.preview);
+}

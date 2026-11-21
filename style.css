@@ -86,3 +86,5 @@ h2{font-size:clamp(21px,4vw,30px);line-height:1.2;color:#ccffee}.result-card>p{l
 
 #menu-screen:not([hidden])~.utility{top:14px;bottom:auto;right:14px}
 @media(max-width:650px){.intro-title>p:last-child{display:none}}
+
+#wardrobe .wardrobe-grid{max-height:290px;overflow-y:auto;scrollbar-width:thin;padding:2px 3px 4px 2px}
