@@ -11,6 +11,8 @@ function characterColors(outfit, hair) {
     majestic: ['#f5f1e9','#c5c7cc','#e8e4df'],
     corinthians: ['#15171b','#eee9df','#15171b'],
     varsity: ['#604432','#28252a','#171a20'],
+    leatherWine: ['#632b3b','#b17786','#401e2a'],
+    leatherBlack: ['#202329','#737d8a','#12151b'],
     zelda: ['#292b30','#505058','#292b30'],
     blueflame: ['#171b26','#3c4659','#171b26'],
     crown: ['#21232c','#555562','#181b24'],
@@ -66,10 +68,18 @@ function drawJeweledFabric(ctx,x,y,w,h) {
 }
 
 function drawPhotoPrint(ctx,outfit,x,y,w,h){
-  if(!['vetements','racer','blueflame','crown','vethood','majestic','corinthians','varsity','zelda'].includes(outfit))return;
+  if(!['vetements','racer','blueflame','crown','vethood','majestic','corinthians','varsity','zelda','leatherWine','leatherBlack'].includes(outfit))return;
   ctx.save();ctx.translate(x,y);ctx.scale(w/40,h/36);ctx.beginPath();ctx.rect(0,0,40,36);ctx.clip();
   const text=(value,yy,color,size=5)=>{ctx.fillStyle=color;ctx.font=`bold ${size}px Arial`;ctx.textAlign='center';ctx.fillText(value,20,yy,37);};
-  if(outfit==='corinthians'){
+  if(outfit==='leatherWine'||outfit==='leatherBlack'){
+    const wine=outfit==='leatherWine';
+    ctx.fillStyle='#11151c';ctx.fillRect(11,0,18,36);
+    ctx.fillStyle=wine?'#7a394c':'#343b44';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(14,0);ctx.lineTo(11,15);ctx.lineTo(10,36);ctx.lineTo(0,36);ctx.closePath();ctx.fill();
+    ctx.fillStyle=wine?'#542332':'#20262e';ctx.beginPath();ctx.moveTo(27,0);ctx.lineTo(40,0);ctx.lineTo(40,36);ctx.lineTo(26,36);ctx.lineTo(29,14);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#c4cedb';ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(28,9);ctx.lineTo(26,33);ctx.moveTo(2,23);ctx.lineTo(9,19);ctx.moveTo(31,20);ctx.lineTo(38,24);ctx.stroke();
+    ctx.fillStyle='#e9eff7';ctx.fillRect(26.6,17,1.5,3);ctx.fillRect(4,7,1.3,1.3);ctx.fillRect(34,7,1.3,1.3);
+    ctx.strokeStyle=wine?'#a15e72':'#65717f';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(2,12);ctx.lineTo(2,31);ctx.moveTo(38,12);ctx.lineTo(38,32);ctx.moveTo(1,34);ctx.lineTo(39,34);ctx.stroke();
+  }else if(outfit==='corinthians'){
     ctx.strokeStyle='#f5f2e8';ctx.lineWidth=1.2;for(let i=0;i<7;i++){ctx.beginPath();ctx.moveTo(2+i*6,-2);ctx.lineTo(1+i*6,38);ctx.stroke();}
     // Red anchor and white round shield keep the small chest badge recognizable.
     ctx.strokeStyle='#bd343c';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(29,4);ctx.lineTo(29,19);ctx.moveTo(24,15);ctx.quadraticCurveTo(29,23,34,15);ctx.moveTo(24,7);ctx.lineTo(34,17);ctx.moveTo(34,7);ctx.lineTo(24,17);ctx.stroke();
@@ -130,6 +140,12 @@ function drawPhotoPrint(ctx,outfit,x,y,w,h){
   ctx.restore();
 }
 function drawPhotoSleeve(ctx,outfit){
+  if(outfit==='leatherWine'||outfit==='leatherBlack'){
+    ctx.save();ctx.beginPath();ctx.rect(-5,-1,10,28);ctx.clip();
+    ctx.strokeStyle=outfit==='leatherWine'?'#a4667a':'#697482';ctx.lineWidth=1.1;
+    ctx.beginPath();ctx.moveTo(-3,1);ctx.quadraticCurveTo(-5,12,-3,22);ctx.moveTo(-4,24);ctx.lineTo(4,24);ctx.stroke();
+    ctx.strokeStyle='#d1dae5';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(3,18);ctx.lineTo(3,23);ctx.stroke();ctx.restore();return;
+  }
   if(outfit==='corinthians'){
     ctx.save();ctx.beginPath();ctx.rect(-6,-1,12,14);ctx.clip();ctx.strokeStyle='#f5f2e8';ctx.lineWidth=1;
     for(let i=-4;i<6;i+=4){ctx.beginPath();ctx.moveTo(i,-1);ctx.lineTo(i,13);ctx.stroke();}ctx.fillStyle='#f5f2e8';ctx.fillRect(-6,10,12,2);ctx.restore();return;
@@ -308,7 +324,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
   const hoodie = ['neon','orange','crown','vethood'].includes(outfit);
-  const longSleeves = hoodie || outfit === 'jeweled' || outfit === 'blueflame' || outfit === 'varsity';
+  const longSleeves = hoodie || outfit === 'jeweled' || outfit === 'blueflame' || outfit === 'varsity' || outfit === 'leatherWine' || outfit === 'leatherBlack';
   const box = (x, y, w, h, r, color) => {
     ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill();
   };
@@ -360,6 +376,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   if (outfit === 'jeweled') line([[-6,-9],[3,-6],[12,-10]],seam,2);
   if(outfit==='corinthians')line([[-6,-8],[3,-5],[12,-9]],'#f5f2e8',2.6);
   if(outfit==='varsity')line([[-6,-10],[-4,-2],[3,-5],[10,-1],[12,-10]],'#1a1c23',2.5);
+  if(outfit==='leatherWine'||outfit==='leatherBlack'){line([[-10,-12],[-5,-2],[0,-7],[7,-1],[12,-12]],seam,2.4);}
   if (outfit === 'white') line([[-6, -8], [3, -5], [12, -9]], seam, 1.2);
   if (hoodie) {
     box(-19, -17, 13, 17, 6, hood);
@@ -421,7 +438,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   if (view === 'profile') return drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, chain, earrings, pantsAccessory, haircut, necklace, earringStyle, braceletStyle, grillz, grillzStyle, airpods, macbook, microphone, pose });
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
   const hoodie = ['neon','orange','crown','vethood'].includes(outfit);
-  const longSleeves = hoodie || outfit === 'jeweled' || outfit === 'blueflame' || outfit === 'varsity';
+  const longSleeves = hoodie || outfit === 'jeweled' || outfit === 'blueflame' || outfit === 'varsity' || outfit === 'leatherWine' || outfit === 'leatherBlack';
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
@@ -501,6 +518,8 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
     line([[-11, -11], [-3, -5], [-7, -1], [-14, -8]], '#666771', 1.3);
     line([[11, -11], [3, -5], [7, -1], [14, -8]], '#666771', 1.3);
     oval(0, -2, 0.65, 0.65, '#b7bec9'); oval(0, 2, 0.65, 0.65, '#b7bec9');
+  } else if(outfit==='leatherWine'||outfit==='leatherBlack'){
+    line([[-14,-12],[-8,-1],[-3,-6],[-8,-13]],seam,2.6);line([[14,-12],[8,-1],[3,-6],[8,-13]],seam,2.6);
   } else if(outfit==='varsity'){
     line([[-13,-12],[-8,-3],[-4,-7]],'#171a20',3);line([[13,-12],[8,-3],[4,-7]],'#171a20',3);
   } else if (hoodie) {
