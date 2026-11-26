@@ -424,4 +424,16 @@ for(const factor of [.72,1.28])for(const distance of [0,30000])for(const gap of 
   for(const id of ['earringStyle-none','grillzStyle-none','jewelry-airpods','jewelry-macbook','jewelry-microphone'])f.run(`drawWardrobeThumbnail(el('game'),'${id}');`);
 }
 
-console.log(`OK: dedicated grillz category and three independent extras; diamond earrings, gold bracelet and lower-only grillz; independent cuts and colors, Majestic shirt; compact fitting tabs, thumbnails and separate portrait angle; direct necklace choices, no pendant plate and light baggy jeans; gold grillz and hoop-cross earrings; photo outfits and jewelry styles; independent jewelry choices; drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);
+
+{
+  const f=fixture();
+  f.events['filter-jackets:click']();assert.equal(f.element('filter-panel-jackets').hidden,false);
+  assert.equal(f.element('filter-panel-blouses').hidden,true);
+  f.events['outfit-varsity:click']();f.events['pants-beige:click']();f.events['shoes-boots:click']();
+  const saved=JSON.parse(f.storage.get('beat-runner-character'));assert.equal(saved.outfit,'varsity');assert.equal(saved.pants,'beige');
+  for(const outfit of ['corinthians','varsity','zelda'])for(const view of ['front','profile'])
+    f.run(`drawDJ(ctx,{x:100,y:100,view:'${view}',outfit:'${outfit}',pants:'beige',shoes:'boots',running:true,phase:5});`);
+  for(const id of ['outfit-corinthians','outfit-varsity','outfit-zelda','pants-beige'])f.run(`drawWardrobeThumbnail(el('game'),'${id}');`);
+}
+
+console.log(`OK: Corinthians, varsity jacket, Zelda and beige baggy denim; dedicated grillz category and three independent extras; diamond earrings, gold bracelet and lower-only grillz; independent cuts and colors, Majestic shirt; compact fitting tabs, thumbnails and separate portrait angle; direct necklace choices, no pendant plate and light baggy jeans; gold grillz and hoop-cross earrings; photo outfits and jewelry styles; independent jewelry choices; drinks, temporary speed and pause; drink jump clearance; random spacing; scrolling scenery; visible collision feedback; ${scenarios} jump regressions; all looks and poses; vinyl collection; energy and 8s drop; 3 lives and recovery; stages and achievements; training; resize; mute; pause; identical 20/30/60/144 Hz pacing; cached art and interpolated strides; four special items; missions; perfect jumps; crowd; chill mode; twelve-scene tour; side-on default and natural pickups; blocked storage.`);

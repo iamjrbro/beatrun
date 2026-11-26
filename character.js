@@ -9,6 +9,9 @@ function characterColors(outfit, hair) {
     vetements: ['#171820','#3e414b','#171820'],
     racer: ['#f0eee3','#c4c2b6','#e5e2d5'],
     majestic: ['#f5f1e9','#c5c7cc','#e8e4df'],
+    corinthians: ['#15171b','#eee9df','#15171b'],
+    varsity: ['#604432','#28252a','#171a20'],
+    zelda: ['#292b30','#505058','#292b30'],
     blueflame: ['#171b26','#3c4659','#171b26'],
     crown: ['#21232c','#555562','#181b24'],
     vethood: ['#171820','#41434d','#13151d'],
@@ -63,10 +66,32 @@ function drawJeweledFabric(ctx,x,y,w,h) {
 }
 
 function drawPhotoPrint(ctx,outfit,x,y,w,h){
-  if(!['vetements','racer','blueflame','crown','vethood','majestic'].includes(outfit))return;
+  if(!['vetements','racer','blueflame','crown','vethood','majestic','corinthians','varsity','zelda'].includes(outfit))return;
   ctx.save();ctx.translate(x,y);ctx.scale(w/40,h/36);ctx.beginPath();ctx.rect(0,0,40,36);ctx.clip();
   const text=(value,yy,color,size=5)=>{ctx.fillStyle=color;ctx.font=`bold ${size}px Arial`;ctx.textAlign='center';ctx.fillText(value,20,yy,37);};
-  if(outfit==='vetements'||outfit==='vethood'){
+  if(outfit==='corinthians'){
+    ctx.strokeStyle='#f5f2e8';ctx.lineWidth=1.2;for(let i=0;i<7;i++){ctx.beginPath();ctx.moveTo(2+i*6,-2);ctx.lineTo(1+i*6,38);ctx.stroke();}
+    // Red anchor and white round shield keep the small chest badge recognizable.
+    ctx.strokeStyle='#bd343c';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(29,4);ctx.lineTo(29,19);ctx.moveTo(24,15);ctx.quadraticCurveTo(29,23,34,15);ctx.moveTo(24,7);ctx.lineTo(34,17);ctx.moveTo(34,7);ctx.lineTo(24,17);ctx.stroke();
+    ctx.fillStyle='#eee9df';ctx.beginPath();ctx.arc(29,12,4.3,0,Math.PI*2);ctx.fill();ctx.fillStyle='#17191e';ctx.beginPath();ctx.arc(29,12,3.2,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#f1ece0';ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(27,10);ctx.lineTo(31,10);ctx.moveTo(27,12);ctx.lineTo(31,12);ctx.moveTo(27,14);ctx.lineTo(31,14);ctx.stroke();
+  }else if(outfit==='varsity'){
+    ctx.fillStyle='#17191f';ctx.fillRect(11,0,18,36);
+    ctx.fillStyle='#e8d6a6';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(12,0);ctx.lineTo(11,16);ctx.lineTo(0,12);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(28,0);ctx.lineTo(40,0);ctx.lineTo(40,12);ctx.lineTo(29,16);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#b0a799';ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(11,0);ctx.lineTo(12,36);ctx.moveTo(29,0);ctx.lineTo(28,36);ctx.stroke();
+    ctx.strokeStyle='#302b29';ctx.lineWidth=.6;ctx.beginPath();ctx.ellipse(5,6,2.8,3.2,-.2,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#4a3c2e';ctx.font='bold 3px Georgia';ctx.textAlign='center';ctx.fillText('R',5,7);ctx.fillText('ROYAL',34,7,10);
+    ctx.fillStyle='#252326';ctx.fillRect(0,33,40,3);for(let i=0;i<16;i++){ctx.fillStyle='#645748';ctx.fillRect(i*2.6,33.4,.5,2);}
+  }else if(outfit==='zelda'){
+    text('THE LEGEND OF',4,'#b9a66d',2.6);text('ZELDA',10,'#b9a66d',7);text('BREATH OF THE WILD',13,'#a99970',2.6);
+    ctx.fillStyle='#215a70';ctx.beginPath();ctx.ellipse(21,24,13,12,-.3,0,Math.PI*2);ctx.fill();
+    // Small blond archer in the blue tunic from the supplied shirt artwork.
+    ctx.fillStyle='#c9ad66';ctx.beginPath();ctx.moveTo(17,17);ctx.lineTo(20,13);ctx.lineTo(25,17);ctx.lineTo(24,20);ctx.lineTo(17,20);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#dfbd96';ctx.fillRect(18,18,5,4);ctx.fillStyle='#3d9dbd';ctx.beginPath();ctx.moveTo(17,21);ctx.lineTo(23,21);ctx.lineTo(26,28);ctx.lineTo(16,28);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#c8cbbb';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(18,28);ctx.lineTo(14,34);ctx.moveTo(23,28);ctx.lineTo(25,35);ctx.stroke();
+    ctx.strokeStyle='#d1b078';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(23,23);ctx.lineTo(31,21);ctx.moveTo(30,16);ctx.quadraticCurveTo(36,23,29,29);ctx.moveTo(30,16);ctx.lineTo(29,29);ctx.moveTo(22,23);ctx.lineTo(36,21);ctx.stroke();
+    ctx.strokeStyle='#9fbfc6';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(7,1);ctx.lineTo(8,18);ctx.moveTo(4,6);ctx.lineTo(10,6);ctx.stroke();
+  }else if(outfit==='vetements'||outfit==='vethood'){
     text('VETEMENTS',12,outfit==='vetements'?'#e2e4e9':'#64646f',5);
     if(outfit==='vetements')for(let i=0;i<20;i++){ctx.fillStyle='#fff';ctx.fillRect(3+i*7%34,8+i%4,.45,.45);}
   }else if(outfit==='majestic'){
@@ -105,6 +130,15 @@ function drawPhotoPrint(ctx,outfit,x,y,w,h){
   ctx.restore();
 }
 function drawPhotoSleeve(ctx,outfit){
+  if(outfit==='corinthians'){
+    ctx.save();ctx.beginPath();ctx.rect(-6,-1,12,14);ctx.clip();ctx.strokeStyle='#f5f2e8';ctx.lineWidth=1;
+    for(let i=-4;i<6;i+=4){ctx.beginPath();ctx.moveTo(i,-1);ctx.lineTo(i,13);ctx.stroke();}ctx.fillStyle='#f5f2e8';ctx.fillRect(-6,10,12,2);ctx.restore();return;
+  }
+  if(outfit==='varsity'){
+    ctx.save();ctx.fillStyle='#191c22';ctx.beginPath();ctx.roundRect(-5,0,10,26,3);ctx.fill();
+    ctx.fillStyle='#e2cfa1';ctx.beginPath();ctx.moveTo(-5,0);ctx.lineTo(5,0);ctx.lineTo(4,10);ctx.lineTo(-5,7);ctx.closePath();ctx.fill();ctx.strokeStyle='#7a6d59';ctx.lineWidth=.65;
+    for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(-4,23+i);ctx.lineTo(4,23+i);ctx.stroke();}ctx.restore();return;
+  }
   if(!['blueflame','crown'].includes(outfit))return;
   ctx.save();ctx.beginPath();ctx.rect(-5,-1,10,26);ctx.clip();
   ctx.strokeStyle=outfit==='blueflame'?'#83bceb':'#a56558';ctx.lineWidth=1.4;
@@ -173,6 +207,12 @@ function drawGrillz(ctx,profile,style='iced'){
   if(style==='gold'){ctx.strokeStyle='#f5d97d';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(-5,-1.6);ctx.lineTo(5,-1.6);ctx.stroke();ctx.restore();return;}
   const sparkleY=style==='icedLower'?.9:-1.5;
   ctx.strokeStyle='#ffffff';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(-4,sparkleY-1.3);ctx.lineTo(-4,sparkleY+1.3);ctx.moveTo(-5.3,sparkleY);ctx.lineTo(-2.7,sparkleY);ctx.stroke();ctx.restore();
+}
+
+function drawBeigeWash(ctx,x,y,w,h){
+  ctx.save();ctx.beginPath();ctx.roundRect(x,y,w,h,5);ctx.clip();
+  for(let i=0;i<18;i++){ctx.globalAlpha=.18;ctx.fillStyle=i%2?'#e6d9b4':'#5b5540';ctx.beginPath();ctx.ellipse(x+2+i*7%(w-3),y+2+i*11%(h-3),2+i%3,2.5+i%4,i*.7,0,Math.PI*2);ctx.fill();}
+  ctx.globalAlpha=1;ctx.strokeStyle='#796e55';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(x+2,y+3);ctx.lineTo(x+3,y+h-2);ctx.moveTo(x+3,y+h-2);ctx.lineTo(x+w-2,y+h-3);ctx.stroke();ctx.restore();
 }
 
 function drawDenimWash(ctx,x,y,w,h){
@@ -268,7 +308,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
   const hoodie = ['neon','orange','crown','vethood'].includes(outfit);
-  const longSleeves = hoodie || outfit === 'jeweled' || outfit === 'blueflame';
+  const longSleeves = hoodie || outfit === 'jeweled' || outfit === 'blueflame' || outfit === 'varsity';
   const box = (x, y, w, h, r, color) => {
     ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill();
   };
@@ -283,8 +323,9 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   [-1, 1].forEach(side => {
     ctx.save(); ctx.translate(side * 4, 20);
     ctx.rotate(airborne ? side * 0.55 : side * swing * 0.55);
-    box(pants==='light'?-12:-11, -1, pants==='light'?26:23, 31, 5, pants==='light'?(side<0?'#83a7bf':'#9bbbd0'):side < 0 ? '#1e2028' : '#30333c');
+    box((pants==='light'||pants==='beige')?-12:-11, -1, (pants==='light'||pants==='beige')?26:23, 31, 5, (pants==='light'||pants==='beige')?(pants==='beige'?(side<0?'#a29373':'#bcae8b'):(side<0?'#83a7bf':'#9bbbd0')):side < 0 ? '#1e2028' : '#30333c');
     if(pants==='light')drawDenimWash(ctx,-12,-1,26,31);
+    if(pants==='beige')drawBeigeWash(ctx,-12,-1,26,31);
     if (pants === 'camo') drawCamouflage(ctx, -11, -1, 23, 31);
     line([[-7, 4], [-8, 24]], '#5c606a', 0.8);
     line([[1, 7], [8, 8]], '#545861', 1);
@@ -297,7 +338,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   });
   // Right arm on the far side: bracelet follows that wrist in profile as well.
   ctx.save(); ctx.translate(8, -7); ctx.rotate(airborne ? -0.7 : -0.45 + swing * 0.5);
-  box(-4, 6, 9, 24, 4, longSleeves ? shirt : '#cf997e');
+  box(-4, 6, 9, 24, 4, longSleeves ? (outfit==='varsity'?'#191c22':shirt) : '#cf997e');
   box(-6, -3, 12, 16, 4, shirt);
   if(outfit==='jeweled')drawJeweledFabric(ctx,-4,1,8,24);
   drawPhotoSleeve(ctx,outfit);
@@ -317,6 +358,8 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   line([[-5, -23], [-2, -16], [-5, -10]], '#595057', 1.2);
   if (outfit === 'black') line([[-4, -10], [6, -4], [12, -10]], seam, 2);
   if (outfit === 'jeweled') line([[-6,-9],[3,-6],[12,-10]],seam,2);
+  if(outfit==='corinthians')line([[-6,-8],[3,-5],[12,-9]],'#f5f2e8',2.6);
+  if(outfit==='varsity')line([[-6,-10],[-4,-2],[3,-5],[10,-1],[12,-10]],'#1a1c23',2.5);
   if (outfit === 'white') line([[-6, -8], [3, -5], [12, -9]], seam, 1.2);
   if (hoodie) {
     box(-19, -17, 13, 17, 6, hood);
@@ -325,7 +368,7 @@ function drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pan
   if(chain)drawNecklace(ctx,necklace,true);
   // Left arm faces the viewer in a right-facing profile.
   ctx.save(); ctx.translate(-7, -7); ctx.rotate(pose === 'celebrate' ? -1.65 : airborne ? -0.65 : -swing * 0.5);
-  box(-5, 6, 10, 24, 4, longSleeves ? shirt : '#dfac8d');
+  box(-5, 6, 10, 24, 4, longSleeves ? (outfit==='varsity'?'#191c22':shirt) : '#dfac8d');
   box(-7, -3, 14, 16, 4, shirt); line([[-6, 11], [6, 11]], seam);
   if(outfit==='jeweled'){drawJeweledFabric(ctx,-5,1,10,24);line([[-4,26],[4,26]],seam,2);}
   drawPhotoSleeve(ctx,outfit);
@@ -378,7 +421,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   if (view === 'profile') return drawDJProfile(ctx, { x, y, scale, phase, running, airborne, outfit, pants, shoes, hair, chain, earrings, pantsAccessory, haircut, necklace, earringStyle, braceletStyle, grillz, grillzStyle, airpods, macbook, microphone, pose });
   const { shirt, seam, hood, hairBase, hairLight, hairHighlight, hairShadow } = characterColors(outfit, hair);
   const hoodie = ['neon','orange','crown','vethood'].includes(outfit);
-  const longSleeves = hoodie || outfit === 'jeweled' || outfit === 'blueflame';
+  const longSleeves = hoodie || outfit === 'jeweled' || outfit === 'blueflame' || outfit === 'varsity';
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
@@ -405,11 +448,12 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   [-1, 1].forEach(side => {
     ctx.save(); ctx.translate(side * 10, 21);
     ctx.rotate(airborne ? side * -0.35 : swing * side * 0.35);
-    shape(pants==='light'?-12:-11, -2, pants==='light'?26:23, 31, 5, pants==='light'?(side<0?'#83a7bf':'#9bbbd0'):side < 0 ? '#20222a' : '#30333c');
+    shape((pants==='light'||pants==='beige')?-12:-11, -2, (pants==='light'||pants==='beige')?26:23, 31, 5, (pants==='light'||pants==='beige')?(pants==='beige'?(side<0?'#a29373':'#bcae8b'):(side<0?'#83a7bf':'#9bbbd0')):side < 0 ? '#20222a' : '#30333c');
     if(pants==='light')drawDenimWash(ctx,-12,-2,26,31);
+    if(pants==='beige')drawBeigeWash(ctx,-12,-2,26,31);
     if (pants === 'camo') drawCamouflage(ctx, -11, -2, 23, 31);
     line([[2, 5], [1, 22]], '#626670', 0.8);
-    line([[-6, 1], [-6, 23]], pants==='light'?'#799fb8':'#14161d', 0.8);
+    line([[-6, 1], [-6, 23]], (pants==='light'||pants==='beige')?'#799fb8':'#14161d', 0.8);
     line([[-4, 5], [4, 6]], '#484c57', 1.5);
     for (let i = 0; pants === 'sparkle' && i < 9; i++) {
       const dx = -5 + (i * 7 % 12), dy = 2 + (i * 11 % 21);
@@ -434,7 +478,7 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
   [-1, 1].forEach(side => {
     ctx.save(); ctx.translate(side * 22, -8);
     ctx.rotate(pose === 'celebrate' && side > 0 ? -2.1 : airborne ? side * -0.65 : -swing * side * 0.38);
-    shape(-5, 7, 10, 22, 4, longSleeves ? shirt : '#dfac8d');
+    shape(-5, 7, 10, 22, 4, longSleeves ? (outfit==='varsity'?'#191c22':shirt) : '#dfac8d');
     shape(-7, -2, 14, 15, 4, shirt);
     if(outfit==='jeweled'){drawJeweledFabric(ctx,-5,1,10,24);line([[-4,26],[4,26]],seam,2);}
     line([[-6, 11], [6, 11]], seam);
@@ -457,6 +501,8 @@ function drawDJ(ctx, { x, y, scale = 1, phase = 0, running = false, airborne = f
     line([[-11, -11], [-3, -5], [-7, -1], [-14, -8]], '#666771', 1.3);
     line([[11, -11], [3, -5], [7, -1], [14, -8]], '#666771', 1.3);
     oval(0, -2, 0.65, 0.65, '#b7bec9'); oval(0, 2, 0.65, 0.65, '#b7bec9');
+  } else if(outfit==='varsity'){
+    line([[-13,-12],[-8,-3],[-4,-7]],'#171a20',3);line([[13,-12],[8,-3],[4,-7]],'#171a20',3);
   } else if (hoodie) {
     line([[-13, -13], [-17, -5], [-7, -2], [0, -5], [7, -2], [17, -5], [13, -13]], seam, 2.5);
     line([[-5, -2], [-6, 9]], '#e8f8be', 1); line([[5, -2], [6, 9]], '#e8f8be', 1);

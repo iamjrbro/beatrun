@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#080c18">
   <title>Beat Runner · LUKETA</title>
-  <link rel="stylesheet" href="style.css?v=20261121-extras-grillz">
+  <link rel="stylesheet" href="style.css?v=20261126-new-looks">
 </head>
 <body>
   <canvas id="game" tabindex="0" aria-label="Beat Runner: colete vinis, pendrives, diamantes, pulseiras de backstage e corações; pule caixas de som, cases e cabos. Espaço, seta para cima ou toque para pular; dois toques para pulo duplo.">
@@ -47,7 +47,9 @@
 <div id="wardrobe-panel-clothes" role="tabpanel" aria-labelledby="tab-clothes">
 <div class="wardrobe-filters" role="tablist" aria-label="Tipo de roupa">
 <button id="filter-blouses" type="button" role="tab" aria-selected="true" aria-controls="filter-panel-blouses" tabindex="0">Blusas</button>
+
 <button id="filter-hoodies" type="button" role="tab" aria-selected="false" aria-controls="filter-panel-hoodies" tabindex="-1">Moletons</button>
+<button id="filter-jackets" type="button" role="tab" aria-selected="false" aria-controls="filter-panel-jackets" tabindex="-1">Jaquetas</button>
 </div>
 <div id="filter-panel-blouses" role="tabpanel" aria-labelledby="filter-blouses">
 <div class="wardrobe-grid" role="group" aria-label="Blusa">
@@ -86,6 +88,16 @@
 </canvas>
 <span>Branca Majestic</span>
 </button>
+<button id="outfit-corinthians" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-corinthians">
+</canvas>
+<span>Corinthians listrada</span>
+</button>
+<button id="outfit-zelda" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-zelda">
+</canvas>
+<span>Zelda · Breath of the Wild</span>
+</button>
 </div>
 </div>
 <div id="filter-panel-hoodies" role="tabpanel" aria-labelledby="filter-hoodies" hidden>
@@ -109,6 +121,15 @@
 <canvas width="128" height="90" aria-hidden="true" data-preview="outfit-vethood">
 </canvas>
 <span>Preto Vetements</span>
+</button>
+</div>
+</div>
+<div id="filter-panel-jackets" role="tabpanel" aria-labelledby="filter-jackets" hidden>
+<div class="wardrobe-grid" role="group" aria-label="Jaqueta">
+<button id="outfit-varsity" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="outfit-varsity">
+</canvas>
+<span>Jaqueta marrom e creme</span>
 </button>
 </div>
 </div>
@@ -178,6 +199,11 @@
 <canvas width="128" height="90" aria-hidden="true" data-preview="pants-light">
 </canvas>
 <span>Jeans Claro Baggy</span>
+</button>
+<button id="pants-beige" type="button" aria-pressed="false">
+<canvas width="128" height="90" aria-hidden="true" data-preview="pants-beige">
+</canvas>
+<span>Baggy bege lavada</span>
 </button>
 </div>
 </div>
@@ -474,13 +500,13 @@
   <audio id="music" loop preload="none">
 <source src="music.mp3" type="audio/mpeg">
 </audio>
-  <script src="character.js?v=20261121-extras-grillz">
+  <script src="character.js?v=20261126-new-looks">
 </script>
-  <script src="stage-art.js?v=20261121-extras-grillz">
+  <script src="stage-art.js?v=20261126-new-looks">
 </script>
-  <script src="game.js?v=20261121-extras-grillz">
+  <script src="game.js?v=20261126-new-looks">
 </script>
-  <script src="wardrobe.js?v=20261121-extras-grillz">
+  <script src="wardrobe.js?v=20261126-new-looks">
 </script>
 </body>
 </html>

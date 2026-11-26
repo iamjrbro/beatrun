@@ -24,7 +24,7 @@ function bindWardrobeTabs(ids,prefix,panelPrefix){
   select(ids[0]);
 }
 bindWardrobeTabs(['clothes','hair','pants','shoes','jewels'],'tab-','wardrobe-panel-');
-bindWardrobeTabs(['blouses','hoodies'],'filter-','filter-panel-');
+bindWardrobeTabs(['blouses','hoodies','jackets'],'filter-','filter-panel-');
 bindWardrobeTabs(['haircuts','haircolors'],'filter-','filter-panel-');
 bindWardrobeTabs(['necklaces','earrings','bracelets','grillzs','extras'],'filter-','filter-panel-');
 for(const view of ['front','profile'])el('portrait-'+view).addEventListener('click',()=>{
